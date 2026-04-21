@@ -67,7 +67,7 @@ sudo apt upgrade -y
 
 ```bash
 # GitHub CLI 公式リポジトリを追加
-type -p curl >/dev/null || sudo apt install curl -y
+sudo apt install -y curl
 curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | \
   sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
 sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
@@ -78,7 +78,7 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githu
 
 # インストール
 sudo apt update
-sudo apt install gh -y
+sudo apt install -y gh
 
 # 確認
 gh version
@@ -91,7 +91,8 @@ gh version
 curl -fsSL https://claude.ai/install.sh | bash
 
 # ~/.local/bin を永続的に PATH に追加
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
 
 # 確認
 claude --version
@@ -135,12 +136,9 @@ echo $JAVA_HOME
 > 最新バージョンは https://maven.apache.org/download.cgi で確認。
 
 ```bash
+# ダウンロード・展開・配置（最新バージョンは https://maven.apache.org/download.cgi で確認）
 MVN_VERSION=3.9.9
-
-# ダウンロード
 wget https://downloads.apache.org/maven/maven-3/${MVN_VERSION}/binaries/apache-maven-${MVN_VERSION}-bin.tar.gz
-
-# 展開・配置
 tar -xzf apache-maven-${MVN_VERSION}-bin.tar.gz
 sudo mv apache-maven-${MVN_VERSION} /opt/maven
 rm apache-maven-${MVN_VERSION}-bin.tar.gz
