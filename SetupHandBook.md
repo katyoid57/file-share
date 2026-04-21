@@ -11,11 +11,34 @@
 
 ### 1. 管理者権限アカウントでログインする
 
-### 2. WSL をインストールして再起動する
+### 2. WSL をインストールして設定する
 
 ```powershell
 wsl --install
 ```
+
+インストール後、PowerShell で以下を実行してメモ帳で `.wslconfig` を作成する：
+
+```powershell
+notepad "$env:USERPROFILE\.wslconfig"
+```
+
+メモ帳が開いたら以下を貼り付けて保存し、PCを再起動する：
+
+```ini
+[wsl2]
+networkingMode=mirrored
+memory=8GB
+swap=4GB
+processors=4
+
+[experimental]
+dnsTunneling=true
+autoProxy=true
+autoMemoryReclaim=gradual
+```
+
+> `memory` と `processors` はPCのスペックに合わせて変更すること。
 
 ### 3. Ubuntu をインストールする
 
