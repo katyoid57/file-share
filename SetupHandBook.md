@@ -27,12 +27,9 @@ wsl.exe --list --online
 wsl.exe --install Ubuntu-22.04
 ```
 
-ユーザ名とパスワードを設定（ユーザ名は英小文字・数字）
+インストール後にユーザ名とパスワードの設定を求められる。
 
-```bash
-Enter new UNIX username:
-Enter new UNIX password:
-```
+> ユーザ名・パスワードは別途各自に共有する。（ユーザ名は英小文字・数字）
 
 ```bash
 # 起動確認
@@ -70,14 +67,11 @@ gh version
 # Anthropic 公式のネイティブインストーラー
 curl -fsSL https://claude.ai/install.sh | bash
 
-# 確認
-claude --version
-
 # ~/.local/bin を永続的に PATH に追加
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc
 
 # 確認
-which claude
+claude --version
 ```
 
 ### 6. Copilot CLI のインストール
@@ -96,24 +90,21 @@ gh copilot --help
 # インストール
 sudo apt install -y openjdk-17-jdk
 
-# 確認
-java -version
-```
-
-> **結果例**
-> ```
-> openjdk version "17.x.x" ...
-> ```
-
-```bash
 # JAVA_HOME を永続的に設定
 echo 'export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))' >> ~/.bashrc
 echo 'export PATH=$JAVA_HOME/bin:$PATH' >> ~/.bashrc
 source ~/.bashrc
 
 # 確認
+java -version
 echo $JAVA_HOME
 ```
+
+> **結果例**
+> ```
+> openjdk version "17.x.x" ...
+> /usr/lib/jvm/java-17-openjdk-amd64
+> ```
 
 ### 8. Maven 3.8以上 をインストールする
 
@@ -191,13 +182,17 @@ npm --version
    code --install-extension vmware.vscode-boot-dev-pack
    ```
 
-3. WSL ターミナルから VSCode を起動
+3. WSL ターミナルから VSCode の接続確認を行う（初回のみ）
+
+WSL ターミナルを開き、任意のディレクトリで以下を実行する：
 
 ```bash
+cd ~
 code .
 ```
 
-> ブラウザが開き VSCode Server のインストールが自動で行われた後、WSL 接続状態の VSCode が起動する。
+> 初回は VSCode Server のインストールが自動で行われる（数分かかる場合がある）。  
+> 完了すると VSCode ウィンドウが開く。
 
 4. 起動確認  
    左下に **「WSL: Ubuntu-22.04」** と表示されていれば接続成功
