@@ -114,7 +114,7 @@ claude --version
 
 ```bash
 # 初回実行時にインストールを促されるので yes と答える
-gh copilot suggest "list files"
+gh copilot suggest -p "list files"
 
 # 確認
 gh copilot --version
