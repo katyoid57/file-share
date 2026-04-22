@@ -153,11 +153,13 @@ echo $JAVA_HOME
 ```bash
 # NodeSource 公式スクリプトでリポジトリを追加（Node.js 18 LTS）
 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+```
 
-# インストール
+> **補足:** 実行時に `deprecation warning` が表示されることがあるが、インストールには影響しないため無視して問題ない。
+
+```bash
+# インストール・確認
 sudo apt install -y nodejs
-
-# 確認
 node --version
 npm --version
 ```
