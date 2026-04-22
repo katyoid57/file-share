@@ -172,10 +172,14 @@ rm apache-maven-${MVN_VERSION}-bin.tar.gz
 ```
 
 ```bash
-# 環境変数を永続的に設定・確認
+# 環境変数を永続的に設定
 echo 'export M2_HOME=/opt/maven' >> ~/.bashrc
 echo 'export PATH=$M2_HOME/bin:$PATH' >> ~/.bashrc
 source ~/.bashrc
+```
+
+```bash
+# 確認
 mvn -version
 ```
 
@@ -194,8 +198,12 @@ curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
 > **補足:** 実行時に `deprecation warning` が表示されることがあるが、インストールには影響しないため無視して問題ない。
 
 ```bash
-# インストール・確認
+# インストール
 sudo apt install -y nodejs
+```
+
+```bash
+# 確認
 node --version
 npm --version
 ```
