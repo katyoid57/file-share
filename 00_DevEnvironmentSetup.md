@@ -159,17 +159,14 @@ cd ~
 ```
 
 ```bash
-# バージョン指定
+# バージョン指定・ダウンロード
 MVN_VERSION=3.9.15
-```
-
-```bash
-# ダウンロード
 wget https://downloads.apache.org/maven/maven-3/${MVN_VERSION}/binaries/apache-maven-${MVN_VERSION}-bin.tar.gz
 ```
 
 ```bash
 # 展開・配置・後片付け
+MVN_VERSION=3.9.15
 tar -xzf apache-maven-${MVN_VERSION}-bin.tar.gz
 sudo mv apache-maven-${MVN_VERSION} /opt/maven
 rm apache-maven-${MVN_VERSION}-bin.tar.gz
