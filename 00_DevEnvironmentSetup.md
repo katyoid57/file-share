@@ -148,14 +148,14 @@ echo $JAVA_HOME
 > /usr/lib/jvm/java-17-openjdk-amd64
 > ```
 
-### 8. Maven 3.8以上 をインストールする
+### 8. Maven 3.9 をインストールする
 
 > **注意:** apt でインストールできる Maven はバージョンが古い（3.6系）のため、以下のコマンドで公式サイトから直接取得してインストールする。  
 > 最新バージョンは https://maven.apache.org/download.cgi で確認。
 
 ```bash
 # バージョン指定
-MVN_VERSION=3.9.9
+MVN_VERSION=3.9.15
 ```
 
 ```bash
@@ -182,7 +182,7 @@ mvn -version
 
 > **結果例**
 > ```
-> Apache Maven 3.9.x ...
+> Apache Maven 3.9.15 ...
 > ```
 
 ### 9. Node.js 20（LTS）をインストールする
