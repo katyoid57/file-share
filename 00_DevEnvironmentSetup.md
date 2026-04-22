@@ -150,17 +150,27 @@ echo $JAVA_HOME
 
 ### 8. Maven 3.8以上 をインストールする
 
-> **注意:** apt の Maven はバージョンが古い（3.6系）ため、公式バイナリを手動インストールする。  
+> **注意:** apt でインストールできる Maven はバージョンが古い（3.6系）のため、以下のコマンドで公式サイトから直接取得してインストールする。  
 > 最新バージョンは https://maven.apache.org/download.cgi で確認。
 
 ```bash
-# ダウンロード・展開・配置（最新バージョンは https://maven.apache.org/download.cgi で確認）
+# バージョン指定
 MVN_VERSION=3.9.9
+```
+
+```bash
+# ダウンロード
 wget https://downloads.apache.org/maven/maven-3/${MVN_VERSION}/binaries/apache-maven-${MVN_VERSION}-bin.tar.gz
+```
+
+```bash
+# 展開・配置・後片付け
 tar -xzf apache-maven-${MVN_VERSION}-bin.tar.gz
 sudo mv apache-maven-${MVN_VERSION} /opt/maven
 rm apache-maven-${MVN_VERSION}-bin.tar.gz
+```
 
+```bash
 # 環境変数を永続的に設定
 echo 'export M2_HOME=/opt/maven' >> ~/.bashrc
 echo 'export PATH=$M2_HOME/bin:$PATH' >> ~/.bashrc
