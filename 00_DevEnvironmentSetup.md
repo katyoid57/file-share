@@ -148,46 +148,7 @@ echo $JAVA_HOME
 > /usr/lib/jvm/java-17-openjdk-amd64
 > ```
 
-### 8. Maven 3.9 をインストールする
-
-> **注意:** apt でインストールできる Maven はバージョンが古い（3.6系）のため、以下のコマンドで公式サイトから直接取得してインストールする。  
-> 最新バージョンは https://maven.apache.org/download.cgi で確認。
-
-```bash
-# ホームディレクトリに移動（WSLのLinuxファイルシステム上で作業するため）
-cd ~
-```
-
-```bash
-# バージョン指定・ダウンロード
-MVN_VERSION=3.9.15
-wget https://downloads.apache.org/maven/maven-3/${MVN_VERSION}/binaries/apache-maven-${MVN_VERSION}-bin.tar.gz
-```
-
-```bash
-# 展開・配置・後片付け
-MVN_VERSION=3.9.15
-tar -xzf apache-maven-${MVN_VERSION}-bin.tar.gz
-sudo mv apache-maven-${MVN_VERSION} /opt/maven
-rm apache-maven-${MVN_VERSION}-bin.tar.gz
-```
-
-```bash
-# 環境変数を永続的に設定
-echo 'export M2_HOME=/opt/maven' >> ~/.bashrc
-echo 'export PATH=$M2_HOME/bin:$PATH' >> ~/.bashrc
-source ~/.bashrc
-
-# 確認
-mvn -version
-```
-
-> **結果例**
-> ```
-> Apache Maven 3.9.15 ...
-> ```
-
-### 9. Node.js 20（LTS）をインストールする
+### 8. Node.js 20（LTS）をインストールする
 
 ```bash
 # NodeSource 公式スクリプトでリポジトリを追加（Node.js 20 LTS）
@@ -207,7 +168,7 @@ npm --version
 > 10.x.x
 > ```
 
-### 10. VSCode をインストールする（利用申請完了後に実施）
+### 9. VSCode をインストールする（利用申請完了後に実施）
 
 > **注意:** WSL 上では VSCode 本体は Windows 側にインストールし、WSL 拡張機能で接続する。
 
