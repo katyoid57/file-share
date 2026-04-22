@@ -148,11 +148,11 @@ echo $JAVA_HOME
 > /usr/lib/jvm/java-17-openjdk-amd64
 > ```
 
-### 8. Node.js 20（LTS）をインストールする
+### 8. Node.js 18（LTS）をインストールする
 
 ```bash
-# NodeSource 公式スクリプトでリポジトリを追加（Node.js 20 LTS）
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+# NodeSource 公式スクリプトでリポジトリを追加（Node.js 18 LTS）
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
 
 # インストール
 sudo apt install -y nodejs
@@ -164,7 +164,7 @@ npm --version
 
 > **結果例**
 > ```
-> v20.x.x
+> v18.x.x
 > 10.x.x
 > ```
 
