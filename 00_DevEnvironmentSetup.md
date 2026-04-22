@@ -4,6 +4,7 @@
 
 - VSCode利用申請
 - ClaudeCodeアカウント作成
+- GitHub Copilot契約
 
 ---
 
@@ -114,8 +115,12 @@ claude --version
 
 ```bash
 # 初回実行時にインストールを促されるので yes と答える
-gh copilot suggest -p "list files"
+gh copilot suggest "list files"
+```
 
+> **補足:** インストール後に `Invalid command format` エラーが表示されることがあるが、インストール自体は成功しているため無視して問題ない。
+
+```bash
 # 確認
 gh copilot --version
 ```
