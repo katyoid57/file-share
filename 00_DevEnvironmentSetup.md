@@ -110,7 +110,7 @@ claude --version
 > 2.x.x (Claude Code)
 > ```
 
-### 6. Copilot CLI のインストール
+### 6. GitHub Copilot のインストール
 
 ```bash
 # 初回実行時にインストールを促されるので yes と答える
