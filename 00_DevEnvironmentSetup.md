@@ -13,11 +13,19 @@
 
 ### 2. WSL をインストールして設定する
 
-```powershell
+コマンドプロンプトを**管理者として起動**する（スタートメニューで「cmd」を右クリック → **管理者として実行**）。
+
+```cmd
 wsl --install
 ```
 
-インストール後、PowerShell で以下を実行してメモ帳で `.wslconfig` を作成する：
+インストール後、以下で確認する：
+
+```cmd
+wsl --version
+```
+
+次に、PowerShell で以下を実行してメモ帳で `.wslconfig` を作成する：
 
 ```powershell
 notepad "$env:USERPROFILE\.wslconfig"
