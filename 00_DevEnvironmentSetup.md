@@ -154,6 +154,11 @@ echo $JAVA_HOME
 > 最新バージョンは https://maven.apache.org/download.cgi で確認。
 
 ```bash
+# ホームディレクトリに移動（WSLのLinuxファイルシステム上で作業するため）
+cd ~
+```
+
+```bash
 # バージョン指定
 MVN_VERSION=3.9.15
 ```
