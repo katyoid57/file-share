@@ -11,7 +11,7 @@
 
 ### 1. 管理者権限アカウントでログインする
 
-### 2. WSL をインストールして設定する
+### 2. WSL をインストールする
 
 コマンドプロンプトを**管理者として起動**する（スタートメニューで「cmd」を右クリック → **管理者として実行**）。
 
@@ -19,34 +19,20 @@
 wsl --install
 ```
 
-インストール後、以下で確認する：
+インストール後、**PCを再起動する**。
+
+再起動後、コマンドプロンプトを開き（管理者不要）、以下でインストールを確認する：
 
 ```cmd
 wsl --version
 ```
 
-次に、PowerShell で以下を実行してメモ帳で `.wslconfig` を作成する：
-
-```powershell
-notepad "$env:USERPROFILE\.wslconfig"
-```
-
-メモ帳が開いたら以下を貼り付けて保存し、PCを再起動する：
-
-```ini
-[wsl2]
-networkingMode=mirrored
-memory=8GB
-swap=4GB
-processors=4
-
-[experimental]
-dnsTunneling=true
-autoProxy=true
-autoMemoryReclaim=gradual
-```
-
-> `memory` と `processors` はPCのスペックに合わせて変更すること。
+> **結果例**
+> ```
+> WSL version: 2.x.x.x
+> Kernel version: 5.15.x.x-microsoft-standard-WSL2
+> Windows version: 10.0.x.x
+> ```
 
 ### 3. Ubuntu をインストールする
 
@@ -65,7 +51,14 @@ wsl.exe --install Ubuntu-22.04
 ```bash
 # 起動確認
 uname -a
+```
 
+> **結果例**
+> ```
+> Linux <hostname> 5.15.x.x-microsoft-standard-WSL2 #1 SMP ... x86_64 GNU/Linux
+> ```
+
+```bash
 # 最新化
 sudo apt update
 sudo apt upgrade -y
@@ -92,6 +85,12 @@ sudo apt install -y gh
 gh version
 ```
 
+> **結果例**
+> ```
+> gh version 2.x.x (2024-xx-xx)
+> https://github.com/cli/cli/releases/tag/v2.x.x
+> ```
+
 ### 5. Claude CLI のインストール
 
 ```bash
@@ -106,15 +105,26 @@ source ~/.bashrc
 claude --version
 ```
 
+> **結果例**
+> ```
+> 2.x.x (Claude Code)
+> ```
+
 ### 6. Copilot CLI のインストール
 
 ```bash
-# インストール
-gh extension install github/gh-copilot
+# 初回実行時にインストールを促されるので yes と答える
+gh copilot suggest "list files"
 
 # 確認
-gh copilot --help
+gh copilot --version
 ```
+
+> **結果例**
+> ```
+> GitHub Copilot CLI 1.x.x
+> Run 'copilot update' to check for updates.
+> ```
 
 ### 7. JDK 17 をインストールする
 
