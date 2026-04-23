@@ -194,33 +194,7 @@ mvn -version
 > Apache Maven 3.9.15 ...
 > ```
 
-### 9. Node.js 18（LTS）をインストールする
-
-```bash
-# NodeSource 公式スクリプトでリポジトリを追加（Node.js 18 LTS）
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-```
-
-> **補足:** 実行時に `deprecation warning` が表示されることがあるが、インストールには影響しないため無視して問題ない。
-
-```bash
-# インストール
-sudo apt install -y nodejs
-```
-
-```bash
-# 確認
-node --version
-npm --version
-```
-
-> **結果例**
-> ```
-> v18.x.x
-> 10.x.x
-> ```
-
-### 10. VSCode をインストールする（利用申請完了後に実施）
+### 9. VSCode をインストールする（利用申請完了後に実施）
 
 > **注意:** WSL 上では VSCode 本体は Windows 側にインストールし、WSL 拡張機能で接続する。
 
