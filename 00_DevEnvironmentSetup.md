@@ -3,6 +3,7 @@
 ## 準備
 
 - VSCode利用申請
+- GitHubアカウント作成
 - ClaudeCodeアカウント作成
 - GitHub Copilot契約
 
