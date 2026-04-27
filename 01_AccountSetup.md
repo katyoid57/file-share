@@ -18,7 +18,7 @@ Windows のスタートメニューまたはタスクバーから **「Visual St
 
 ### 2. WSL に接続する
 
-VSCode 左下の **`><`** アイコンをクリックし、**「WSLへの接続」** を選択する。
+VSCode 左下の **`><`** アイコンをクリックし、**「Connect to WSL」** を選択する。
 
 > または `Ctrl+Shift+P` → `WSL: Connect to WSL` で接続できる。  
 > 左下のステータスバーに **「WSL: Ubuntu-22.04」** と表示されれば接続完了。

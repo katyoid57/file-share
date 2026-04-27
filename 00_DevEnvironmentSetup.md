@@ -212,17 +212,9 @@ mvn -version
    | Extension Pack for Java | `vscjava.vscode-java-pack` |
    | Spring Boot Extension Pack | `vmware.vscode-boot-dev-pack` |
 
-3. WSL ターミナルから VSCode の接続確認を行う（初回のみ）
+3. VSCode 左下の **`><`** アイコンをクリックし、**「Connect to WSL」** を選択する
 
-WSL ターミナルを開き、任意のディレクトリで以下を実行する：
-
-```bash
-cd ~
-code .
-```
-
-> 初回は VSCode Server のインストールが自動で行われる（数分かかる場合がある）。  
-> 完了すると VSCode ウィンドウが開く。
+> 初回は VSCode Server のダウンロードとインストールが自動で行われる（数分かかる場合がある）。
 
 4. 起動確認  
    左下に **「WSL: Ubuntu-22.04」** と表示されていれば接続成功
