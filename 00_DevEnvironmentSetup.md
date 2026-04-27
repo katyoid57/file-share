@@ -212,14 +212,6 @@ mvn -version
    | Extension Pack for Java | `vscjava.vscode-java-pack` |
    | Spring Boot Extension Pack | `vmware.vscode-boot-dev-pack` |
 
-   またはターミナルからまとめてインストール：
-
-   ```powershell
-   code --install-extension ms-vscode-remote.remote-wsl
-   code --install-extension vscjava.vscode-java-pack
-   code --install-extension vmware.vscode-boot-dev-pack
-   ```
-
 3. WSL ターミナルから VSCode の接続確認を行う（初回のみ）
 
 WSL ターミナルを開き、任意のディレクトリで以下を実行する：
