@@ -112,7 +112,19 @@ gh auth status
 
 ---
 
-### 6. 研修資料をダウンロード・配置する
+### 6. Office Viewer のインストール（上流工程研修のみ）
+
+Excel・Word などの Office ファイルを VSCode 上で確認したい場合にインストールする。
+
+拡張機能パネル（`Ctrl+Shift+X`）を開き、**「Office Viewer」** を検索してインストールする。
+
+| 拡張機能名 | 拡張機能ID |
+|---|---|
+| Office Viewer(Markdown Editor) | `cweijan.vscode-office` |
+
+---
+
+### 7. 研修資料をダウンロード・配置する
 
 1. メールで共有された URL にブラウザでアクセスし、パスワードを入力して ZIP ファイルをダウンロードする
 
@@ -122,22 +134,10 @@ gh auth status
 
 ---
 
-### 7. プロジェクトフォルダを開く
+### 8. プロジェクトフォルダを開く
 
 メニューバー → **ファイル** → **フォルダーを開く**（`Ctrl+K, Ctrl+O`）から  
 WSL 上の展開したプロジェクトディレクトリを選択する。
-
----
-
-### 8. Office Viewer のインストール（上流工程研修のみ）
-
-Excel・Word などの Office ファイルを VSCode 上で確認したい場合にインストールする。
-
-拡張機能パネル（`Ctrl+Shift+X`）を開き、**「Office Viewer」** を検索してインストールする。
-
-| 拡張機能名 | 拡張機能ID |
-|---|---|
-| Office Viewer(Markdown Editor) | `cweijan.vscode-office` |
 
 ---
 
