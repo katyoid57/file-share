@@ -148,7 +148,7 @@ Excel・Word などの Office ファイルを VSCode 上で確認したい場合
 
 | 拡張機能名 | 拡張機能ID |
 |---|---|
-| Office Viewer(Markdown Editor) | `cweijan.vscode-office` |
+| Office Viewer | `cweijan.vscode-office` |
 
 ---
 
