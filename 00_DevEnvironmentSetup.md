@@ -228,9 +228,13 @@ mvn -version
 ## シェルスクリプトで一括セットアップする場合
 
 ステップ 4〜8 のWSL内の作業（GitHub CLI・Claude CLI・JDK・Maven のインストール）は、シェルスクリプトで一括実行できます。  
-ステップ 1〜3（WSL・Ubuntu のインストール）およびステップ 9（VSCode）は事前に手動で実施しておくこと。
+それ以外のステップは手動で実施します。
 
-### 1. setup.sh で一括インストール
+### 1. WSL・Ubuntu のセットアップ
+
+通常の手順のステップ 1〜3 を実施してください。
+
+### 2. setup.sh で一括インストール
 
 WSL ターミナルで以下を実行する。
 
@@ -247,7 +251,7 @@ rm setup.sh
 > gh copilot suggest "list files"
 > ```
 
-### 2. check.sh でインストール確認
+### 3. check.sh でインストール確認
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/check.sh -o check.sh
@@ -256,3 +260,7 @@ rm check.sh
 ```
 
 > 各項目に `[OK]` が表示されていればインストール完了。`[NG]` の場合は該当ステップを見直すこと。
+
+### 4. VSCode のインストール
+
+通常の手順のステップ 9 を実施してください。
