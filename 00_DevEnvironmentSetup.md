@@ -9,6 +9,10 @@
 
 ---
 
+> **補足:** WSL 内の作業（ステップ 4〜8）はシェルスクリプトで一括実行することも可能です。詳細は末尾の「シェルスクリプトで一括セットアップする場合」を参照してください。
+
+---
+
 ## セットアップ
 
 ### 1. 管理者権限アカウントでログインする
@@ -218,3 +222,37 @@ mvn -version
 
 4. 起動確認  
    左下に **「WSL: Ubuntu-22.04」** と表示されていれば接続成功
+
+---
+
+## シェルスクリプトで一括セットアップする場合
+
+ステップ 4〜8 のWSL内の作業（GitHub CLI・Claude CLI・JDK・Maven のインストール）は、シェルスクリプトで一括実行できます。  
+ステップ 1〜3（WSL・Ubuntu のインストール）およびステップ 9（VSCode）は事前に手動で実施しておくこと。
+
+### 1. setup.sh で一括インストール
+
+WSL ターミナルで以下を実行する。
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/setup.sh -o setup.sh
+bash setup.sh
+rm setup.sh
+```
+
+完了後、ターミナルを再起動して環境変数を反映する。
+
+> **注意:** GitHub Copilot のインストールは `gh auth login` の認証完了後に手動で実行してください。
+> ```
+> gh copilot suggest "list files"
+> ```
+
+### 2. check.sh でインストール確認
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/check.sh -o check.sh
+bash check.sh
+rm check.sh
+```
+
+> 各項目に `[OK]` が表示されていればインストール完了。`[NG]` の場合は該当ステップを見直すこと。
