@@ -85,7 +85,7 @@ curl -s https://claude.ai > /dev/null && echo "Claude.ai: OK" || echo "Claude.ai
 curl -s https://github.com > /dev/null && echo "GitHub: OK" || echo "GitHub: NG"
 ```
 
-> すべて `OK` と表示されれば問題ない。`NG` の場合はネットワーク設定を確認すること。解決が難しそうであればAPD GrowthTech推進部へ連絡すること。
+>  `OK` と表示されれば問題ない。`NG` の場合はネットワーク設定を確認すること。解決が難しそうであればAPD GrowthTech推進部へ連絡すること。
 
 ---
 
@@ -108,7 +108,7 @@ claude
 5. ブラウザに **認証コード** が表示される → ターミナルに貼り付けて `Enter`
 6. ターミナルに **「Login successful. Press Enter to continue」** と表示される → `Enter`
 7. **セキュリティノート**が表示される → `Enter` で次へ
-8. **ターミナル統合の設定**（Terminal setup）の選択が表示される → 選択して `Enter`
+8. **ターミナル統合の設定**（Terminal setup）の選択が表示される →  `Enter`
 9. **フォルダの信頼確認**（セキュリティガイド）が表示される → 信頼する場合は許可して進む
 
 > 以上で認証完了。`exit` または `Ctrl+C` で終了できる。
@@ -177,7 +177,7 @@ Excel・Word などの Office ファイルを VSCode 上で確認したい場合
 
 ### 8. プロジェクトフォルダを開く
 
-メニューバー → **ファイル** → **フォルダーを開く**（`Ctrl+K, Ctrl+O`）から  
+VSCodeのメニューバー → **ファイル** → **フォルダーを開く**（`Ctrl+K, Ctrl+O`）から  
 WSL 上の展開したプロジェクトディレクトリを選択する。
 
 ---
@@ -203,7 +203,7 @@ Windows のスタートメニューまたはタスクバーから **「Visual St
 
 ### 3. プロジェクトフォルダを開く
 
-メニューバー → **ファイル** → **フォルダーを開く**（`Ctrl+K, Ctrl+O`）から  
+VSCodeのメニューバー → **ファイル** → **フォルダーを開く**（`Ctrl+K, Ctrl+O`）から  
 WSL 上のプロジェクトディレクトリを選択する。
 
 > 2回目以降は **ファイル** → **最近使用したもの** から直接開ける。
