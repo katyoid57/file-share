@@ -1,13 +1,22 @@
 #!/bin/bash
 set -e
 
-echo "=== Claude Code 認証解除 ==="
+RED='\033[0;31m'
+NC='\033[0m'
+
+CURRENT_STEP=""
+trap 'echo -e "${RED}[ERROR]${NC} ${CURRENT_STEP} で失敗しました（line $LINENO）。"; exit 1' ERR
+
+CURRENT_STEP="Claude Code 認証解除"
+echo "=== $CURRENT_STEP ==="
 claude logout
 
-echo "=== GitHub CLI 認証解除 ==="
+CURRENT_STEP="GitHub CLI 認証解除"
+echo "=== $CURRENT_STEP ==="
 gh auth logout
 
-echo "=== 研修資料フォルダの削除 ==="
+CURRENT_STEP="研修資料フォルダの削除"
+echo "=== $CURRENT_STEP ==="
 read -p "削除する研修フォルダ名を入力してください（例: training-2026）: " FOLDER_NAME
 TARGET="$HOME/$FOLDER_NAME"
 

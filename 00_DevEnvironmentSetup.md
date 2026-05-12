@@ -239,8 +239,17 @@ mvn -version
 WSL ターミナルで以下を実行する。
 
 ```bash
+# ダウンロード
 curl -fsSL https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/setup.sh -o setup.sh
+```
+
+```bash
+# 実行
 bash setup.sh
+```
+
+```bash
+# 後片付け
 rm setup.sh
 ```
 
@@ -251,12 +260,21 @@ rm setup.sh
 > gh copilot suggest "list files"
 > ```
 
-### 3. check.sh でインストール確認
+### 3. check-setup.sh でインストール確認
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/check.sh -o check.sh
-bash check.sh
-rm check.sh
+# ダウンロード
+curl -fsSL https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/check-setup.sh -o check-setup.sh
+```
+
+```bash
+# 実行
+bash check-setup.sh
+```
+
+```bash
+# 後片付け
+rm check-setup.sh
 ```
 
 > 各項目に `[OK]` が表示されていればインストール完了。`[NG]` の場合は該当ステップを見直すこと。
