@@ -13,11 +13,22 @@ append_bashrc_once() {
   grep -qxF "$line" ~/.bashrc 2>/dev/null || echo "$line" >> ~/.bashrc
 }
 
+# 指定秒数だけカウントダウン表示しながら待機する（前のステップとの間隔を空けるため）
+countdown() {
+  local seconds=${1:-3}
+  for i in $(seq "$seconds" -1 1); do
+    printf "\rインストール開始まで: %2d秒 " "$i"
+    sleep 1
+  done
+  printf "\r%-40s\r" ""
+}
+
 CURRENT_STEP="GitHub CLI のインストール"
 echo "=== $CURRENT_STEP ==="
 if command -v gh > /dev/null 2>&1; then
   echo "→ 既にインストール済みのためスキップします。（$(gh --version | head -n 1)）"
 else
+  countdown 3
   sudo apt install -y curl
   curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | \
     sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
@@ -34,6 +45,7 @@ export PATH="$HOME/.local/bin:$PATH"
 if command -v claude > /dev/null 2>&1; then
   echo "→ 既にインストール済みのためスキップします。（$(claude --version 2>&1 | head -n 1)）"
 else
+  countdown 3
   curl -fsSL https://claude.ai/install.sh | bash
   append_bashrc_once 'export PATH="$HOME/.local/bin:$PATH"'
 fi
@@ -48,6 +60,7 @@ echo "=== $CURRENT_STEP ==="
 if dpkg -s openjdk-17-jdk > /dev/null 2>&1; then
   echo "→ 既にインストール済みのためスキップします。（$(java -version 2>&1 | head -n 1)）"
 else
+  countdown 3
   sudo apt install -y openjdk-17-jdk
 fi
 JAVA_HOME_VAL=$(dirname $(dirname $(readlink -f $(which java))))
@@ -62,6 +75,7 @@ MVN_VERSION=3.9.15
 if [ -x /opt/maven/bin/mvn ]; then
   echo "→ 既にインストール済みのためスキップします。（$(/opt/maven/bin/mvn -version 2>&1 | head -n 1)）"
 else
+  countdown 3
   cd ~
   rm -f apache-maven-${MVN_VERSION}-bin.tar.gz
   wget https://downloads.apache.org/maven/maven-3/${MVN_VERSION}/binaries/apache-maven-${MVN_VERSION}-bin.tar.gz
