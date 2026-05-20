@@ -170,7 +170,7 @@ cd ~
 ```bash
 # バージョン指定・ダウンロード
 MVN_VERSION=3.9.15
-wget https://downloads.apache.org/maven/maven-3/${MVN_VERSION}/binaries/apache-maven-${MVN_VERSION}-bin.tar.gz
+wget https://archive.apache.org/dist/maven/maven-3/${MVN_VERSION}/binaries/apache-maven-${MVN_VERSION}-bin.tar.gz
 ```
 
 ```bash

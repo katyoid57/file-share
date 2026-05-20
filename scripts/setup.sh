@@ -78,7 +78,7 @@ else
   countdown 3
   cd ~
   rm -f apache-maven-${MVN_VERSION}-bin.tar.gz
-  wget https://downloads.apache.org/maven/maven-3/${MVN_VERSION}/binaries/apache-maven-${MVN_VERSION}-bin.tar.gz
+  wget https://archive.apache.org/dist/maven/maven-3/${MVN_VERSION}/binaries/apache-maven-${MVN_VERSION}-bin.tar.gz
   tar -xzf apache-maven-${MVN_VERSION}-bin.tar.gz
   sudo rm -rf /opt/maven
   sudo mv apache-maven-${MVN_VERSION} /opt/maven
