@@ -39,6 +39,7 @@ else
   sudo apt install -y gh
 fi
 
+echo ""
 CURRENT_STEP="Claude CLI のインストール"
 echo "=== $CURRENT_STEP ==="
 export PATH="$HOME/.local/bin:$PATH"
@@ -50,11 +51,13 @@ else
   append_bashrc_once 'export PATH="$HOME/.local/bin:$PATH"'
 fi
 
+echo ""
 CURRENT_STEP="GitHub Copilot の案内"
 echo "=== $CURRENT_STEP ==="
 echo "※ スクリプト完了後に以下のコマンドを手動で実行してください："
 echo "  gh copilot suggest \"list files\""
 
+echo ""
 CURRENT_STEP="JDK 17 のインストール"
 echo "=== $CURRENT_STEP ==="
 if dpkg -s openjdk-17-jdk > /dev/null 2>&1; then
@@ -69,6 +72,7 @@ append_bashrc_once 'export PATH=$JAVA_HOME/bin:$PATH'
 export JAVA_HOME=$JAVA_HOME_VAL
 export PATH=$JAVA_HOME/bin:$PATH
 
+echo ""
 CURRENT_STEP="Maven のインストール"
 echo "=== $CURRENT_STEP ==="
 MVN_VERSION=3.9.15
@@ -89,6 +93,6 @@ append_bashrc_once 'export PATH=$M2_HOME/bin:$PATH'
 
 echo ""
 echo "=== セットアップ完了 ==="
-echo "※ 環境変数を反映するため、ターミナルを再起動してください。"
+echo "※ 環境変数を反映するため、exit で WSL を抜けて wsl で入り直してください。"
 echo "※ GitHub Copilot のインストールがまだの場合は手動で実行してください。"
 echo "    gh copilot suggest \"list files\""
