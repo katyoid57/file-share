@@ -9,10 +9,6 @@
 
 ---
 
-> **補足:** WSL 内の作業（ステップ 4〜8）はシェルスクリプトで一括実行することも可能です。詳細は末尾の「シェルスクリプトで一括セットアップする場合」を参照してください。
-
----
-
 ## セットアップ
 
 ### 1. 管理者権限アカウントでログインする
@@ -70,7 +66,68 @@ sudo apt update
 sudo apt upgrade -y
 ```
 
-### 4. GitHub CLI のインストール
+### 4. CLI・JDK・Maven のインストール
+
+以下の **A**（シェルスクリプトで一括）または **B**（手動で1つずつ）のどちらかを実施する。**初回は A を推奨**する。
+
+---
+
+#### A. シェルスクリプトで一括インストール（推奨）
+
+##### A-1. setup.sh で一括インストール
+
+WSL ターミナルで以下を実行する。
+
+```bash
+# ダウンロード
+curl -fsSL https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/setup.sh -o setup.sh
+```
+
+```bash
+# 実行
+bash setup.sh
+```
+
+```bash
+# 後片付け
+rm setup.sh
+```
+
+> **重要:** スクリプト完了後、必ず **WSL ターミナルを一度閉じて開き直して** ください。  
+> `~/.bashrc` に追記された `PATH` や `JAVA_HOME` などの環境変数は、新しいターミナルを起動しないと反映されません。  
+> 再起動せずに次の確認手順に進むと、Claude CLI と Maven が `[NG]` と表示されます。
+
+> **注意:** GitHub Copilot のインストールは `gh auth login` の認証完了後に手動で実行してください。
+> ```
+> gh copilot suggest "list files"
+> ```
+
+##### A-2. check-setup.sh でインストール確認
+
+> **前提:** 上記 A-1 の完了後、**ターミナルを再起動した状態**で実行してください。
+
+```bash
+# ダウンロード
+curl -fsSL https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/check-setup.sh -o check-setup.sh
+```
+
+```bash
+# 実行
+bash check-setup.sh
+```
+
+```bash
+# 後片付け
+rm check-setup.sh
+```
+
+> 各項目に `[OK]` が表示されていればインストール完了。`[NG]` の場合は該当ステップを見直すこと。
+
+---
+
+#### B. 手動でインストールする
+
+##### B-1. GitHub CLI のインストール
 
 ```bash
 # GitHub CLI 公式リポジトリを追加
@@ -97,7 +154,7 @@ gh version
 > https://github.com/cli/cli/releases/tag/v2.x.x
 > ```
 
-### 5. Claude CLI のインストール
+##### B-2. Claude CLI のインストール
 
 ```bash
 # Anthropic 公式のネイティブインストーラー
@@ -116,7 +173,7 @@ claude --version
 > 2.x.x (Claude Code)
 > ```
 
-### 6. GitHub Copilot のインストール
+##### B-3. GitHub Copilot のインストール
 
 ```bash
 # 初回実行時にインストールを促されるので yes と答える
@@ -136,7 +193,7 @@ gh copilot --version
 > Run 'copilot update' to check for updates.
 > ```
 
-### 7. JDK 17 をインストールする
+##### B-4. JDK 17 をインストールする
 
 ```bash
 # インストール
@@ -158,7 +215,7 @@ echo $JAVA_HOME
 > /usr/lib/jvm/java-17-openjdk-amd64
 > ```
 
-### 8. Maven をインストールする
+##### B-5. Maven をインストールする
 
 > **注意:** apt でインストールできる Maven はバージョンが古い（3.6系）のため、以下のコマンドで公式サイトから直接取得してインストールする。
 
@@ -198,7 +255,9 @@ mvn -version
 > Apache Maven 3.9.15 ...
 > ```
 
-### 9. VSCode をインストールする（利用申請完了後に実施）
+---
+
+### 5. VSCode をインストールする（利用申請完了後に実施）
 
 > **注意:** WSL 上では VSCode 本体は Windows 側にインストールし、WSL 拡張機能で接続する。
 
@@ -222,67 +281,3 @@ mvn -version
 
 4. 起動確認  
    左下に **「WSL: Ubuntu-22.04」** と表示されていれば接続成功
-
----
-
-## シェルスクリプトで一括セットアップする場合
-
-ステップ 4〜8 のWSL内の作業（GitHub CLI・Claude CLI・JDK・Maven のインストール）は、シェルスクリプトで一括実行できます。  
-それ以外のステップは手動で実施します。
-
-### 1. WSL・Ubuntu のセットアップ
-
-通常の手順のステップ 1〜3 を実施してください。
-
-### 2. setup.sh で一括インストール
-
-WSL ターミナルで以下を実行する。
-
-```bash
-# ダウンロード
-curl -fsSL https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/setup.sh -o setup.sh
-```
-
-```bash
-# 実行
-bash setup.sh
-```
-
-```bash
-# 後片付け
-rm setup.sh
-```
-
-> **重要:** スクリプト完了後、必ず **WSL ターミナルを一度閉じて開き直して** ください。  
-> `~/.bashrc` に追記された `PATH` や `JAVA_HOME` などの環境変数は、新しいターミナルを起動しないと反映されません。  
-> 再起動せずに次の確認手順に進むと、Claude CLI と Maven が `[NG]` と表示されます。
-
-> **注意:** GitHub Copilot のインストールは `gh auth login` の認証完了後に手動で実行してください。
-> ```
-> gh copilot suggest "list files"
-> ```
-
-### 3. check-setup.sh でインストール確認
-
-> **前提:** 上記ステップ 2 の完了後、**ターミナルを再起動した状態**で実行してください。
-
-```bash
-# ダウンロード
-curl -fsSL https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/check-setup.sh -o check-setup.sh
-```
-
-```bash
-# 実行
-bash check-setup.sh
-```
-
-```bash
-# 後片付け
-rm check-setup.sh
-```
-
-> 各項目に `[OK]` が表示されていればインストール完了。`[NG]` の場合は該当ステップを見直すこと。
-
-### 4. VSCode のインストール
-
-通常の手順のステップ 9 を実施してください。
