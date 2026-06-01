@@ -35,5 +35,31 @@ foreach ($b in $browsers) {
   }
 }
 
+# メモ帳の未保存タブの確認
+$notepadState = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsNotepad_8wekyb3d8bbwe\LocalState\TabState"
+$tabCount = (Get-ChildItem -Path $notepadState -Force -ErrorAction SilentlyContinue | Measure-Object).Count
+if ($tabCount -eq 0) {
+  Write-Host "[OK] メモ帳: 未保存タブなし" -ForegroundColor Green
+} else {
+  Write-Host "[NG] メモ帳: 未保存タブが残っています（$tabCount 件）" -ForegroundColor Red
+}
+
+# デスクトップ / ドキュメントの余分なショートカット確認（セットアップで作られる VSCode 以外）
+$expected = @('Visual Studio Code')   # セットアップで作られる想定のショートカット名（拡張子を除いた名前）
+$shortcutDirs = @(
+  @{ Name = 'デスクトップ';   Path = [Environment]::GetFolderPath('Desktop') },
+  @{ Name = 'ドキュメント';   Path = [Environment]::GetFolderPath('MyDocuments') }
+)
+foreach ($d in $shortcutDirs) {
+  $stray = Get-ChildItem -Path $d.Path -Filter *.lnk -Force -ErrorAction SilentlyContinue |
+           Where-Object { $expected -notcontains $_.BaseName }
+  if ($stray) {
+    Write-Host "[NG] $($d.Name): セットアップ手順以外のショートカットがあります（要確認・手動削除）:" -ForegroundColor Red
+    $stray | ForEach-Object { Write-Host "       - $($_.Name)" }
+  } else {
+    Write-Host "[OK] $($d.Name): セットアップ以外のショートカットなし" -ForegroundColor Green
+  }
+}
+
 Write-Host ""
 Write-Host "=== 確認完了 ==="

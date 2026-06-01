@@ -1,12 +1,12 @@
 ﻿# 研修PCクリーンアップ（Windows側）
-# Chrome / Edge の Cookie・閲覧履歴・ブックマーク削除、ダウンロードフォルダの全削除、ごみ箱を空にする。
+# ブラウザ(Chrome/Edge)のCookie・履歴・ブックマーク・タブ削除、メモ帳の未保存タブ削除、ダウンロードフォルダの全削除、ごみ箱を空にする。
 # 実行例: powershell -ExecutionPolicy Bypass -File .\cleanup.ps1
 
 $ErrorActionPreference = 'Continue'
 
-# 1. ブラウザを終了する（プロファイルのロックを外すため）
-Write-Host "=== ブラウザを終了します ===" -ForegroundColor Cyan
-foreach ($name in @('chrome', 'msedge')) {
+# 1. ブラウザ・メモ帳を終了する（プロファイル/未保存タブのロックを外すため。-Force で未保存内容ごと閉じる）
+Write-Host "=== ブラウザ・メモ帳を終了します ===" -ForegroundColor Cyan
+foreach ($name in @('chrome', 'msedge', 'notepad')) {
   Get-Process -Name $name -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 }
 Start-Sleep -Seconds 2
@@ -37,7 +37,18 @@ foreach ($b in $browsers) {
 }
 Write-Host "  ※ サーバー側セッション無効化のため、事前に claude.ai / GitHub を手動ログアウトしておくと確実です。"
 
-# 3. ダウンロードフォルダの中身を全削除する
+# 3. メモ帳の未保存タブを削除する（Windows 11 のメモ帳はセッション復元で未保存内容を保持するため）
+Write-Host ""
+Write-Host "=== メモ帳の未保存タブを削除します ===" -ForegroundColor Cyan
+$notepadState = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsNotepad_8wekyb3d8bbwe\LocalState\TabState"
+if (Test-Path $notepadState) {
+  Get-ChildItem -Path $notepadState -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+  Write-Host "  メモ帳の未保存タブ情報をクリアしました。"
+} else {
+  Write-Host "  メモ帳の未保存タブはありません（または対象外のメモ帳）。"
+}
+
+# 4. ダウンロードフォルダの中身を全削除する
 Write-Host ""
 Write-Host "=== ダウンロードフォルダを空にします ===" -ForegroundColor Cyan
 $downloads = "$env:USERPROFILE\Downloads"
@@ -57,7 +68,7 @@ if ($items) {
   Write-Host "  ダウンロードフォルダは既に空です。"
 }
 
-# 4. ごみ箱を空にする
+# 5. ごみ箱を空にする
 Write-Host ""
 Write-Host "=== ごみ箱を空にします ===" -ForegroundColor Cyan
 Clear-RecycleBin -Force -ErrorAction SilentlyContinue
