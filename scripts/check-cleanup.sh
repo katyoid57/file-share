@@ -32,23 +32,30 @@ fi
 
 # 研修資料フォルダの確認
 echo ""
-echo "現在ホーム（~）にあるフォルダ:"
-if ls -d "$HOME"/*/ > /dev/null 2>&1; then
-  for d in "$HOME"/*/; do echo "  - $(basename "$d")"; done
+# 研修資料は ~/ 直下にファイル・フォルダがバラけてコピーされる場合があるため、
+# フォルダだけでなく隠しファイルを除く全項目を表示する
+echo "現在ホーム（~）にあるファイル・フォルダ（隠しファイルを除く）:"
+shopt -s nullglob
+HOME_ITEMS=("$HOME"/*)
+shopt -u nullglob
+if [ ${#HOME_ITEMS[@]} -gt 0 ]; then
+  for item in "${HOME_ITEMS[@]}"; do
+    if [ -d "$item" ]; then echo "  - $(basename "$item")/"; else echo "  - $(basename "$item")"; fi
+  done
 else
-  echo "  （フォルダはありません）"
+  echo "  （ありません）"
 fi
 echo ""
-read -p "削除を確認したい研修フォルダ名を入力してください（不明/不要なら空欄のまま Enter でスキップ）: " FOLDER_NAME
+read -p "削除を確認したい研修資料の名前を入力してください（ファイル/フォルダ可。不明/不要なら空欄のまま Enter でスキップ）: " FOLDER_NAME
 
 if [ -z "$FOLDER_NAME" ]; then
-  echo -e "${GREEN}[--]${NC} 研修フォルダ: 確認をスキップしました（上記一覧に研修フォルダが無ければ削除済み）"
+  echo -e "${GREEN}[--]${NC} 研修資料: 確認をスキップしました（上記一覧に研修資料が無ければ削除済み）"
 else
   TARGET="$HOME/$FOLDER_NAME"
-  if [ -d "$TARGET" ]; then
-    echo -e "${RED}[NG]${NC} 研修フォルダ: $TARGET が残っています"
+  if [ -e "$TARGET" ]; then
+    echo -e "${RED}[NG]${NC} 研修資料: $TARGET が残っています"
   else
-    echo -e "${GREEN}[OK]${NC} 研修フォルダ: $TARGET は削除済み"
+    echo -e "${GREEN}[OK]${NC} 研修資料: $TARGET は削除済み"
   fi
 fi
 

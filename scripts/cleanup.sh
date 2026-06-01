@@ -50,20 +50,27 @@ echo "削除しました: ~/.gitconfig（~/.bash_history はクリア）"
 echo ""
 CURRENT_STEP="研修資料フォルダの削除"
 echo "=== $CURRENT_STEP ==="
-echo "現在ホーム（~）にあるフォルダ:"
-if ls -d "$HOME"/*/ > /dev/null 2>&1; then
-  for d in "$HOME"/*/; do echo "  - $(basename "$d")"; done
+# 研修資料は ~/ 直下にファイル・フォルダがバラけてコピーされる場合があるため、
+# フォルダだけでなく隠しファイルを除く全項目を表示する
+echo "現在ホーム（~）にあるファイル・フォルダ（隠しファイルを除く）:"
+shopt -s nullglob
+HOME_ITEMS=("$HOME"/*)
+shopt -u nullglob
+if [ ${#HOME_ITEMS[@]} -gt 0 ]; then
+  for item in "${HOME_ITEMS[@]}"; do
+    if [ -d "$item" ]; then echo "  - $(basename "$item")/"; else echo "  - $(basename "$item")"; fi
+  done
 else
-  echo "  （フォルダはありません）"
+  echo "  （ありません）"
 fi
 echo ""
-read -p "削除する研修フォルダ名を入力してください（既に削除済み/不要なら空欄のまま Enter でスキップ）: " FOLDER_NAME
+read -p "削除する研修資料の名前を入力してください（ファイル/フォルダ可。既に削除済み/不要なら空欄のまま Enter でスキップ）: " FOLDER_NAME
 
 if [ -z "$FOLDER_NAME" ]; then
-  echo "→ 入力が無いためスキップします（研修フォルダの削除は行いません）。"
+  echo "→ 入力が無いためスキップします（研修資料の削除は行いません）。"
 else
   TARGET="$HOME/$FOLDER_NAME"
-  if [ -d "$TARGET" ]; then
+  if [ -e "$TARGET" ]; then
     read -p "「$TARGET」を削除しますか？ [y/N]: " CONFIRM
     if [ "$CONFIRM" = "y" ] || [ "$CONFIRM" = "Y" ]; then
       rm -rf "$TARGET"
@@ -72,7 +79,7 @@ else
       echo "削除をスキップしました。"
     fi
   else
-    echo "フォルダが見つかりません（既に削除済みの可能性）: $TARGET"
+    echo "見つかりません（既に削除済みの可能性）: $TARGET"
   fi
 fi
 
