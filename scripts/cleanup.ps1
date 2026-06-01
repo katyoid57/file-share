@@ -13,17 +13,22 @@ Start-Sleep -Seconds 2
 
 # 2. Cookie・閲覧履歴・ブックマークを削除する
 Write-Host ""
-Write-Host "=== ブラウザの Cookie・閲覧履歴・ブックマークを削除します ===" -ForegroundColor Cyan
+Write-Host "=== ブラウザの Cookie・閲覧履歴・ブックマーク・タブ/セッションを削除します ===" -ForegroundColor Cyan
 $browsers = @(
   @{ Name = 'Chrome'; Path = "$env:LOCALAPPDATA\Google\Chrome\User Data\Default" },
   @{ Name = 'Edge';   Path = "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default" }
 )
-$targets = @('Network\Cookies', 'Cookies', 'History', 'Bookmarks', 'Bookmarks.bak')
+$targets = @(
+  'Network\Cookies', 'Cookies', 'History', 'Bookmarks', 'Bookmarks.bak',
+  'Current Session', 'Current Tabs', 'Last Session', 'Last Tabs',  # 開いていた/前回のタブ
+  'Sessions',                                                       # 最近閉じたタブの履歴（フォルダ）
+  'Top Sites', 'Visited Links'                                      # 新しいタブの「よく使うサイト」等
+)
 foreach ($b in $browsers) {
   if (Test-Path $b.Path) {
     foreach ($t in $targets) {
       $f = Join-Path $b.Path $t
-      if (Test-Path $f) { Remove-Item $f -Force -ErrorAction SilentlyContinue }
+      if (Test-Path $f) { Remove-Item $f -Recurse -Force -ErrorAction SilentlyContinue }
     }
     Write-Host "  クリア: $($b.Name)"
   } else {
