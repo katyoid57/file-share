@@ -10,8 +10,10 @@ trap 'echo -e "${RED}[ERROR]${NC} ${CURRENT_STEP} で失敗しました（line $
 # 1. Claude Code 認証解除
 CURRENT_STEP="Claude Code 認証解除"
 echo "=== $CURRENT_STEP ==="
-if command -v claude > /dev/null 2>&1; then
-  claude logout || echo "→ 既にログアウト済み、または logout に失敗しました。続行します。"
+if [ ! -f "$HOME/.claude/.credentials.json" ]; then
+  echo "→ 認証情報が無いためスキップします（既にログアウト済み）。"
+elif command -v claude > /dev/null 2>&1; then
+  claude logout || echo "→ logout に失敗しましたが続行します。"
 else
   echo "→ Claude CLI が見つからないためスキップします。"
 fi
