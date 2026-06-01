@@ -1,4 +1,4 @@
-# 研修PCクリーンアップ確認（Windows側）
+﻿# 研修PCクリーンアップ確認（Windows側）
 # 実行例: powershell -ExecutionPolicy Bypass -File .\check-cleanup.ps1
 
 $ErrorActionPreference = 'Continue'

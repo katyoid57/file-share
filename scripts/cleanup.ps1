@@ -1,4 +1,4 @@
-# 研修PCクリーンアップ（Windows側）
+﻿# 研修PCクリーンアップ（Windows側）
 # Chrome / Edge の Cookie・閲覧履歴・ブックマーク削除、ダウンロードフォルダの全削除、ごみ箱を空にする。
 # 実行例: powershell -ExecutionPolicy Bypass -File .\cleanup.ps1
 
