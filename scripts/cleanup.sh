@@ -7,16 +7,17 @@ NC='\033[0m'
 CURRENT_STEP=""
 trap 'echo -e "${RED}[ERROR]${NC} ${CURRENT_STEP} で失敗しました（line $LINENO）。"; exit 1' ERR
 
-# 1. Claude Code 認証解除
+# 1. Claude Code 認証解除（認証情報ファイルを直接削除する。
+#    claude logout は環境によって対話的なログイン画面を開くことがあるため呼ばない）
 CURRENT_STEP="Claude Code 認証解除"
 echo "=== $CURRENT_STEP ==="
-if [ ! -f "$HOME/.claude/.credentials.json" ]; then
-  echo "→ 認証情報が無いためスキップします（既にログアウト済み）。"
-elif command -v claude > /dev/null 2>&1; then
-  claude logout || echo "→ logout に失敗しましたが続行します。"
+if [ -f "$HOME/.claude/.credentials.json" ]; then
+  rm -f "$HOME/.claude/.credentials.json"
+  echo "認証情報を削除しました（~/.claude/.credentials.json）。"
 else
-  echo "→ Claude CLI が見つからないためスキップします。"
+  echo "→ 認証情報が無いためスキップします（既にログアウト済み）。"
 fi
+echo "※ サーバー側セッションは手順0のブラウザ手動ログアウトで無効化されます。"
 
 # 2. GitHub CLI 認証解除（下流工程研修のみ）
 echo ""

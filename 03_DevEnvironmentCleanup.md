@@ -69,8 +69,8 @@ rm check-cleanup.sh
 ### 手動で実施する場合
 
 ```bash
-# 1. Claude Code 認証解除
-claude logout
+# 1. Claude Code 認証解除（認証情報ファイルを削除。claude logout は対話画面が開く場合があるため使わない）
+rm -f ~/.claude/.credentials.json
 
 # 2. GitHub CLI 認証解除（下流工程研修のみ）
 gh auth logout
