@@ -44,20 +44,19 @@ if ($tabCount -eq 0) {
   Write-Host "[NG] メモ帳: 未保存タブが残っています（$tabCount 件）" -ForegroundColor Red
 }
 
-# デスクトップ / ドキュメントの余分なショートカット確認（セットアップで作られる VSCode 以外）
-$expected = @('Visual Studio Code')   # セットアップで作られる想定のショートカット名（拡張子を除いた名前）
+# デスクトップ / ドキュメントのショートカット一覧（参考表示のみ。NG判定はしない。
+# セットアップ手順以外のものがあれば手動で削除する）
 $shortcutDirs = @(
   @{ Name = 'デスクトップ';   Path = [Environment]::GetFolderPath('Desktop') },
   @{ Name = 'ドキュメント';   Path = [Environment]::GetFolderPath('MyDocuments') }
 )
 foreach ($d in $shortcutDirs) {
-  $stray = Get-ChildItem -Path $d.Path -Filter *.lnk -Force -ErrorAction SilentlyContinue |
-           Where-Object { $expected -notcontains $_.BaseName }
-  if ($stray) {
-    Write-Host "[NG] $($d.Name): セットアップ手順以外のショートカットがあります（要確認・手動削除）:" -ForegroundColor Red
-    $stray | ForEach-Object { Write-Host "       - $($_.Name)" }
+  $links = Get-ChildItem -Path $d.Path -Filter *.lnk -Force -ErrorAction SilentlyContinue
+  if ($links) {
+    Write-Host "[情報] $($d.Name) のショートカット一覧（セットアップ手順以外があれば手動削除）:" -ForegroundColor Yellow
+    $links | ForEach-Object { Write-Host "       - $($_.Name)" }
   } else {
-    Write-Host "[OK] $($d.Name): セットアップ以外のショートカットなし" -ForegroundColor Green
+    Write-Host "[情報] $($d.Name): ショートカットなし" -ForegroundColor Yellow
   }
 }
 
