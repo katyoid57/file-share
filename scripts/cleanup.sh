@@ -47,19 +47,30 @@ echo "削除しました: ~/.gitconfig（~/.bash_history はクリア）"
 echo ""
 CURRENT_STEP="研修資料フォルダの削除"
 echo "=== $CURRENT_STEP ==="
-read -p "削除する研修フォルダ名を入力してください（例: training-2026）: " FOLDER_NAME
-TARGET="$HOME/$FOLDER_NAME"
-
-if [ -d "$TARGET" ]; then
-  read -p "「$TARGET」を削除しますか？ [y/N]: " CONFIRM
-  if [ "$CONFIRM" = "y" ] || [ "$CONFIRM" = "Y" ]; then
-    rm -rf "$TARGET"
-    echo "削除しました: $TARGET"
-  else
-    echo "削除をスキップしました。"
-  fi
+echo "現在ホーム（~）にあるフォルダ:"
+if ls -d "$HOME"/*/ > /dev/null 2>&1; then
+  for d in "$HOME"/*/; do echo "  - $(basename "$d")"; done
 else
-  echo "フォルダが見つかりません: $TARGET"
+  echo "  （フォルダはありません）"
+fi
+echo ""
+read -p "削除する研修フォルダ名を入力してください（既に削除済み/不要なら空欄のまま Enter でスキップ）: " FOLDER_NAME
+
+if [ -z "$FOLDER_NAME" ]; then
+  echo "→ 入力が無いためスキップします（研修フォルダの削除は行いません）。"
+else
+  TARGET="$HOME/$FOLDER_NAME"
+  if [ -d "$TARGET" ]; then
+    read -p "「$TARGET」を削除しますか？ [y/N]: " CONFIRM
+    if [ "$CONFIRM" = "y" ] || [ "$CONFIRM" = "Y" ]; then
+      rm -rf "$TARGET"
+      echo "削除しました: $TARGET"
+    else
+      echo "削除をスキップしました。"
+    fi
+  else
+    echo "フォルダが見つかりません（既に削除済みの可能性）: $TARGET"
+  fi
 fi
 
 echo ""

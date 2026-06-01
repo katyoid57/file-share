@@ -32,13 +32,24 @@ fi
 
 # 研修資料フォルダの確認
 echo ""
-read -p "削除を確認したい研修フォルダ名を入力してください（例: training-2026）: " FOLDER_NAME
-TARGET="$HOME/$FOLDER_NAME"
-
-if [ -d "$TARGET" ]; then
-  echo -e "${RED}[NG]${NC} 研修フォルダ: $TARGET が残っています"
+echo "現在ホーム（~）にあるフォルダ:"
+if ls -d "$HOME"/*/ > /dev/null 2>&1; then
+  for d in "$HOME"/*/; do echo "  - $(basename "$d")"; done
 else
-  echo -e "${GREEN}[OK]${NC} 研修フォルダ: $TARGET は削除済み"
+  echo "  （フォルダはありません）"
+fi
+echo ""
+read -p "削除を確認したい研修フォルダ名を入力してください（不明/不要なら空欄のまま Enter でスキップ）: " FOLDER_NAME
+
+if [ -z "$FOLDER_NAME" ]; then
+  echo -e "${GREEN}[--]${NC} 研修フォルダ: 確認をスキップしました（上記一覧に研修フォルダが無ければ削除済み）"
+else
+  TARGET="$HOME/$FOLDER_NAME"
+  if [ -d "$TARGET" ]; then
+    echo -e "${RED}[NG]${NC} 研修フォルダ: $TARGET が残っています"
+  else
+    echo -e "${GREEN}[OK]${NC} 研修フォルダ: $TARGET は削除済み"
+  fi
 fi
 
 echo ""
