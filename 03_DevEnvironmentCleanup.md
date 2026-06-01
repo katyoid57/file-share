@@ -93,19 +93,21 @@ rm -rf ~/（研修フォルダ名）
 Windows のスタートメニューで **「PowerShell」** を検索して起動し、以下を実行する。
 
 ```powershell
-# ダウンロード
-Invoke-WebRequest -Uri https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/cleanup.ps1 -OutFile cleanup.ps1
+# ダウンロード（TEMP に保存。作業フォルダの権限に依存しない）
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/cleanup.ps1 -OutFile "$env:TEMP\cleanup.ps1"
 ```
 
 ```powershell
 # 実行
-powershell -ExecutionPolicy Bypass -File .\cleanup.ps1
+powershell -ExecutionPolicy Bypass -File "$env:TEMP\cleanup.ps1"
 ```
 
 ```powershell
 # 後片付け
-Remove-Item cleanup.ps1
+Remove-Item "$env:TEMP\cleanup.ps1"
 ```
+
+> **補足:** `アクセスが拒否されました` と出る場合は、保存先フォルダの書き込み権限が原因です。上記のとおり `$env:TEMP` に保存すれば回避できます（管理者権限は不要）。
 
 実行すると、ブラウザ（Chrome・Edge）が終了され、Cookie・閲覧履歴・ブックマークが削除される。続いてダウンロードフォルダの全削除確認を求められるので `y` で実行する。最後にごみ箱が空になる。
 
@@ -115,18 +117,18 @@ Remove-Item cleanup.ps1
 ### check-cleanup.ps1 でクリーンアップ確認
 
 ```powershell
-# ダウンロード
-Invoke-WebRequest -Uri https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/check-cleanup.ps1 -OutFile check-cleanup.ps1
+# ダウンロード（TEMP に保存）
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/check-cleanup.ps1 -OutFile "$env:TEMP\check-cleanup.ps1"
 ```
 
 ```powershell
 # 実行
-powershell -ExecutionPolicy Bypass -File .\check-cleanup.ps1
+powershell -ExecutionPolicy Bypass -File "$env:TEMP\check-cleanup.ps1"
 ```
 
 ```powershell
 # 後片付け
-Remove-Item check-cleanup.ps1
+Remove-Item "$env:TEMP\check-cleanup.ps1"
 ```
 
 > 各項目に `[OK]` が表示されていればクリーンアップ完了。`[NG]` の場合は該当ステップを見直すこと。
