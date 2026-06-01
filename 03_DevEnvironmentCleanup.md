@@ -135,6 +135,32 @@ Remove-Item "$env:TEMP\check-cleanup.ps1"
 
 > 各項目に `[OK]` が表示されていればクリーンアップ完了。`[NG]` の場合は該当ステップを見直すこと。
 
+#### 手動で実施する場合
+
+PowerShell で以下を実行する。
+
+```powershell
+# 1. ブラウザ・メモ帳を終了する（未保存内容ごと閉じる）
+Get-Process chrome, msedge, notepad -ErrorAction SilentlyContinue | Stop-Process -Force
+
+# 2. ブラウザ（Chrome・Edge）の Cookie・履歴・ブックマーク・タブ/セッションを削除
+$targets = 'Network\Cookies','Cookies','History','Bookmarks','Bookmarks.bak',
+           'Current Session','Current Tabs','Last Session','Last Tabs','Sessions','Top Sites','Visited Links'
+"$env:LOCALAPPDATA\Google\Chrome\User Data\Default", "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default" | ForEach-Object {
+  $prof = $_
+  $targets | ForEach-Object { Remove-Item (Join-Path $prof $_) -Recurse -Force -ErrorAction SilentlyContinue }
+}
+
+# 3. メモ帳の未保存タブを削除
+Remove-Item "$env:LOCALAPPDATA\Packages\Microsoft.WindowsNotepad_8wekyb3d8bbwe\LocalState\TabState\*" -Recurse -Force -ErrorAction SilentlyContinue
+
+# 4. ダウンロードフォルダの中身を全削除（desktop.ini は除く）
+Get-ChildItem "$env:USERPROFILE\Downloads" -Force | Where-Object { $_.Name -ne 'desktop.ini' } | Remove-Item -Recurse -Force
+
+# 5. ごみ箱を空にする
+Clear-RecycleBin -Force
+```
+
 ---
 
 ### 4. VSCode の「最近開いたフォルダ」履歴を消す
