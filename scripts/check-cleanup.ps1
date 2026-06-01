@@ -44,19 +44,23 @@ if ($tabCount -eq 0) {
   Write-Host "[NG] メモ帳: 未保存タブが残っています（$tabCount 件）" -ForegroundColor Red
 }
 
-# デスクトップ / ドキュメントのショートカット一覧（参考表示のみ。NG判定はしない。
-# セットアップ手順以外のものがあれば手動で削除する）
-$shortcutDirs = @(
+# デスクトップ / ドキュメントのファイル・フォルダ一覧（参考表示のみ。判定はしない。
+# ショートカットに限らず全項目を表示する。セットアップ手順以外があれば手動で削除する）
+# -Force を付けないので隠しファイル・システムファイル（desktop.ini 等）は除外される
+$listDirs = @(
   @{ Name = 'デスクトップ';   Path = [Environment]::GetFolderPath('Desktop') },
   @{ Name = 'ドキュメント';   Path = [Environment]::GetFolderPath('MyDocuments') }
 )
-foreach ($d in $shortcutDirs) {
-  $links = Get-ChildItem -Path $d.Path -Filter *.lnk -Force -ErrorAction SilentlyContinue
-  if ($links) {
-    Write-Host "[情報] $($d.Name) のショートカット一覧（セットアップ手順以外があれば手動削除）:" -ForegroundColor Yellow
-    $links | ForEach-Object { Write-Host "       - $($_.Name)" }
+foreach ($d in $listDirs) {
+  Write-Host ""
+  Write-Host "[情報] $($d.Name) にあるファイル・フォルダ（隠しファイルを除く。手順以外があれば手動削除）:" -ForegroundColor Yellow
+  $items = Get-ChildItem -Path $d.Path -ErrorAction SilentlyContinue
+  if ($items) {
+    foreach ($i in $items) {
+      if ($i.PSIsContainer) { Write-Host "       - $($i.Name)/" } else { Write-Host "       - $($i.Name)" }
+    }
   } else {
-    Write-Host "[情報] $($d.Name): ショートカットなし" -ForegroundColor Yellow
+    Write-Host "       （ありません）"
   }
 }
 
