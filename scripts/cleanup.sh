@@ -7,14 +7,44 @@ NC='\033[0m'
 CURRENT_STEP=""
 trap 'echo -e "${RED}[ERROR]${NC} ${CURRENT_STEP} で失敗しました（line $LINENO）。"; exit 1' ERR
 
+# 1. Claude Code 認証解除
 CURRENT_STEP="Claude Code 認証解除"
 echo "=== $CURRENT_STEP ==="
-claude logout
+if command -v claude > /dev/null 2>&1; then
+  claude logout || echo "→ 既にログアウト済み、または logout に失敗しました。続行します。"
+else
+  echo "→ Claude CLI が見つからないためスキップします。"
+fi
 
-CURRENT_STEP="GitHub CLI 認証解除"
+# 2. GitHub CLI 認証解除（下流工程研修のみ）
+echo ""
+CURRENT_STEP="GitHub CLI 認証解除（下流工程研修のみ）"
 echo "=== $CURRENT_STEP ==="
-gh auth logout
+if command -v gh > /dev/null 2>&1 && gh auth status > /dev/null 2>&1; then
+  gh auth logout
+else
+  echo "→ GitHub CLI が未認証のためスキップします（上流工程研修ではログインしていません）。"
+fi
 
+# 3. Claude Code の会話・プロジェクト履歴削除
+echo ""
+CURRENT_STEP="Claude Code 履歴削除"
+echo "=== $CURRENT_STEP ==="
+rm -rf "$HOME/.claude"
+rm -f "$HOME/.claude.json" "$HOME/.claude.json.backup"
+echo "削除しました: ~/.claude, ~/.claude.json"
+
+# 4. git / bash の個人痕跡削除
+echo ""
+CURRENT_STEP="git / bash の個人痕跡削除"
+echo "=== $CURRENT_STEP ==="
+rm -f "$HOME/.gitconfig"
+: > "$HOME/.bash_history" 2>/dev/null || true
+history -c 2>/dev/null || true
+echo "削除しました: ~/.gitconfig（~/.bash_history はクリア）"
+
+# 5. 研修資料フォルダの削除
+echo ""
 CURRENT_STEP="研修資料フォルダの削除"
 echo "=== $CURRENT_STEP ==="
 read -p "削除する研修フォルダ名を入力してください（例: training-2026）: " FOLDER_NAME
@@ -33,4 +63,6 @@ else
 fi
 
 echo ""
-echo "=== クリーンアップ完了 ==="
+echo "=== WSL側のクリーンアップ完了 ==="
+echo "※ bash 履歴を完全に消すため、作業後はこのターミナルを閉じてください。"
+echo "※ 続けて Windows 側のクリーンアップ（cleanup.ps1）を実施してください。"
