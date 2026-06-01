@@ -36,7 +36,8 @@ Write-Host "  ※ サーバー側セッション無効化のため、事前に c
 Write-Host ""
 Write-Host "=== ダウンロードフォルダを空にします ===" -ForegroundColor Cyan
 $downloads = "$env:USERPROFILE\Downloads"
-$items = Get-ChildItem -Path $downloads -Force -ErrorAction SilentlyContinue
+# desktop.ini はフォルダの表示設定を保持するシステムファイルなので削除対象から除外する
+$items = Get-ChildItem -Path $downloads -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne 'desktop.ini' }
 if ($items) {
   Write-Host "  以下の $($items.Count) 項目を削除します:"
   $items | ForEach-Object { Write-Host "    - $($_.Name)" }

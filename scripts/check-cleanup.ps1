@@ -8,7 +8,7 @@ Write-Host ""
 
 # ダウンロードフォルダの確認
 $downloads = "$env:USERPROFILE\Downloads"
-$count = (Get-ChildItem -Path $downloads -Force -ErrorAction SilentlyContinue | Measure-Object).Count
+$count = (Get-ChildItem -Path $downloads -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne 'desktop.ini' } | Measure-Object).Count
 if ($count -eq 0) {
   Write-Host "[OK] ダウンロードフォルダ: 空です" -ForegroundColor Green
 } else {
