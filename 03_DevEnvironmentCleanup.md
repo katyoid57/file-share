@@ -137,7 +137,7 @@ Remove-Item "$env:TEMP\check-cleanup.ps1"
 
 ## 手順3. VSCode の「最近開いたフォルダ」履歴を消す
 
-VSCode を起動し、**ファイル** → **最近使用したもの** → **最近開いた項目をクリア** を選択する。
+VSCode を起動し、**File** → **Open Recent** → **Clear Recently Opened...** を選択する。
 
 > 研修プロジェクトのパスが履歴に残るのを防ぐための手順です。
 
