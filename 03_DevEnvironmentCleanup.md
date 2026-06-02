@@ -90,7 +90,15 @@ rm -rf ~/（研修フォルダ名）
 
 ---
 
-### 3. Windows側のクリーンアップ
+### 3. VSCode の「最近開いたフォルダ」履歴を消す
+
+VSCode を起動し、**File** → **Open Recent** → **Clear Recently Opened...** を選択する。
+
+> 研修プロジェクトのパスが履歴に残るのを防ぐための手順です。
+
+---
+
+### 4. Windows側のクリーンアップ
 
 Windows のスタートメニューで **「PowerShell」** を検索して起動し、以下を実行する。
 
@@ -163,40 +171,13 @@ Clear-RecycleBin -Force
 
 ---
 
-### 4. VSCode の「最近開いたフォルダ」履歴を消す
-
-VSCode を起動し、**File** → **Open Recent** → **Clear Recently Opened...** を選択する。
-
-> 研修プロジェクトのパスが履歴に残るのを防ぐための手順です。
-
----
-
 ### 5. 仕上げ確認（セットアップ完了状態に戻ったか）
 
 最後に、PC が**次の研修生に渡せる状態（＝セットアップ完了状態）**に戻っているかを確認する。
 
-#### 5-1. デスクトップ・ドキュメントの余分なファイル確認
+#### 5-1. 開発環境が残っているか確認（check-setup.sh・WSL上で実施）
 
-手順3（Windows側）の `check-cleanup.ps1` の出力に、**デスクトップ／ドキュメント**にあるファイル・フォルダ一覧が `[情報]` として表示される（合否判定はしない）。`Visual Studio Code` などセットアップ手順で作られたもの以外（研修生が作成したファイル・ショートカット等）があれば削除する。
-
-削除する場合は、エクスプローラーで右クリック → 削除するか、PowerShell で以下を実行する（`<名前>` を一覧に出た実際の名前に置き換える）。
-
-```powershell
-# デスクトップのファイル/フォルダを削除
-Remove-Item (Join-Path ([Environment]::GetFolderPath('Desktop')) "<名前>") -Recurse -Force
-```
-
-```powershell
-# ドキュメントのファイル/フォルダを削除
-Remove-Item (Join-Path ([Environment]::GetFolderPath('MyDocuments')) "<名前>") -Recurse -Force
-```
-
-> **注意:** `-Recurse -Force` は確認なしで削除します。`<名前>` が一覧に表示されたものと一致しているか確認してから実行してください。
-> 削除後にもう一度 `check-cleanup.ps1` を実行すると、消えたか確認できます。
-
-#### 5-2. 開発環境が残っているか確認（check-setup.sh）
-
-ツール類（`gh`・`claude`・JDK・Maven）が消えずに揃っているかを、`00_DevEnvironmentSetup.md` の確認スクリプトで点検する。WSL ターミナルで:
+ツール類（`gh`・`claude`・JDK・Maven）が消えずに揃っているかを、`00_DevEnvironmentSetup.md` の確認スクリプトで点検する。**WSL ターミナル**で実施する。
 
 ```bash
 # ダウンロード
@@ -215,3 +196,22 @@ rm check-setup.sh
 
 > **すべて `[OK]`** であれば、開発環境はそのまま残っており、認証・個人データだけが消えた**セットアップ完了状態**に戻っている。これで次の研修生がそのまま研修を開始できる。
 > もし `[NG]` が出た場合は、その項目を `00_DevEnvironmentSetup.md` の手順で再セットアップすること。
+
+#### 5-2. デスクトップ・ドキュメントの余分なファイル確認
+
+手順4（Windows側）の `check-cleanup.ps1` の出力に、**デスクトップ／ドキュメント**にあるファイル・フォルダ一覧が `[情報]` として表示される（合否判定はしない）。`Visual Studio Code` などセットアップ手順で作られたもの以外（研修生が作成したファイル・ショートカット等）があれば削除する。
+
+削除する場合は、エクスプローラーで右クリック → 削除するか、PowerShell で以下を実行する（`<名前>` を一覧に出た実際の名前に置き換える）。
+
+```powershell
+# デスクトップのファイル/フォルダを削除
+Remove-Item (Join-Path ([Environment]::GetFolderPath('Desktop')) "<名前>") -Recurse -Force
+```
+
+```powershell
+# ドキュメントのファイル/フォルダを削除
+Remove-Item (Join-Path ([Environment]::GetFolderPath('MyDocuments')) "<名前>") -Recurse -Force
+```
+
+> **注意:** `-Recurse -Force` は確認なしで削除します。`<名前>` が一覧に表示されたものと一致しているか確認してから実行してください。
+> 削除後にもう一度 `check-cleanup.ps1` を実行すると、消えたか確認できます。
