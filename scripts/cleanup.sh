@@ -46,9 +46,9 @@ rm -f "$HOME/.gitconfig"
 history -c 2>/dev/null || true
 echo "削除しました: ~/.gitconfig（~/.bash_history はクリア）"
 
-# 5. 研修資料フォルダの削除
+# 5. 研修資料の削除
 echo ""
-CURRENT_STEP="研修資料フォルダの削除"
+CURRENT_STEP="研修資料の削除"
 echo "=== $CURRENT_STEP ==="
 # 研修資料は ~/ 直下にファイル・フォルダがバラけてコピーされる場合があるため、
 # フォルダだけでなく隠しファイルを除く全項目を表示する
