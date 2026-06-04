@@ -55,7 +55,7 @@ else
   if [ -e "$TARGET" ]; then
     echo -e "${RED}[NG]${NC} 研修資料: $TARGET が残っています"
   else
-    echo -e "${GREEN}[OK]${NC} 研修資料: $TARGET は削除済み"
+    echo -e "${GREEN}[OK]${NC} 研修資料: $TARGET は存在しません"
   fi
 fi
 
