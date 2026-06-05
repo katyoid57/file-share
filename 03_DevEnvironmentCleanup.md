@@ -102,24 +102,24 @@ VSCode を起動し、**File** → **Open Recent** → **Clear Recently Opened..
 
 ### 4. Windows側のクリーンアップ
 
-Windows のスタートメニューで **「PowerShell」** を検索して起動し、以下を実行する。
+Windows のスタートメニューで **「PowerShell」** を検索して起動する。
+
+まず、**クリーンアップ用と確認用のスクリプトを両方ダウンロード**しておく。先に取得しておけば、クリーンアップ後にブラウザを開き直してスクリプトを取りに行く必要がなくなる（手順書を Chrome で見ている場合に、履歴が再生成されて確認で `[NG]` になる問題を避けられる）。
 
 ```powershell
-# ダウンロード（TEMP に保存。作業フォルダの権限に依存しない）
+# ダウンロード（クリーンアップ用・確認用をまとめて TEMP に保存。作業フォルダの権限に依存しない）
 Invoke-WebRequest -Uri https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/cleanup.ps1 -OutFile "$env:TEMP\cleanup.ps1"
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/check-cleanup.ps1 -OutFile "$env:TEMP\check-cleanup.ps1"
 ```
+
+> **補足:** `アクセスが拒否されました` と出る場合は、保存先フォルダの書き込み権限が原因です。上記のとおり `$env:TEMP` に保存すれば回避できます（管理者権限は不要）。
+
+次に、クリーンアップを実行する。
 
 ```powershell
 # 実行
 powershell -ExecutionPolicy Bypass -File "$env:TEMP\cleanup.ps1"
 ```
-
-```powershell
-# 後片付け
-Remove-Item "$env:TEMP\cleanup.ps1"
-```
-
-> **補足:** `アクセスが拒否されました` と出る場合は、保存先フォルダの書き込み権限が原因です。上記のとおり `$env:TEMP` に保存すれば回避できます（管理者権限は不要）。
 
 実行すると、ブラウザ（Chrome・Edge）とメモ帳が終了され、ブラウザの Cookie・閲覧履歴・ブックマーク・タブ/セッション（最近閉じたタブ等）とメモ帳の未保存タブが削除される。続いてダウンロードフォルダの全削除確認を求められるので `y` で実行する。最後にごみ箱が空になる。
 
@@ -128,22 +128,19 @@ Remove-Item "$env:TEMP\cleanup.ps1"
 
 #### check-cleanup.ps1 でクリーンアップ確認
 
-```powershell
-# ダウンロード（TEMP に保存）
-Invoke-WebRequest -Uri https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/check-cleanup.ps1 -OutFile "$env:TEMP\check-cleanup.ps1"
-```
+クリーンアップが終わったら、**先にダウンロードしておいた**確認スクリプトを実行する（ブラウザを開き直さずに済む）。
 
 ```powershell
 # 実行
 powershell -ExecutionPolicy Bypass -File "$env:TEMP\check-cleanup.ps1"
 ```
 
-```powershell
-# 後片付け
-Remove-Item "$env:TEMP\check-cleanup.ps1"
-```
-
 > 各項目に `[OK]` が表示されていればクリーンアップ完了。`[NG]` の場合は該当ステップを見直すこと。
+
+```powershell
+# 後片付け（クリーンアップ用・確認用をまとめて削除）
+Remove-Item "$env:TEMP\cleanup.ps1", "$env:TEMP\check-cleanup.ps1" -ErrorAction SilentlyContinue
+```
 
 #### デスクトップ・ドキュメントの余分なファイル確認
 
