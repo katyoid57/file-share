@@ -89,6 +89,17 @@ history -c && : > ~/.bash_history
 rm -rf ~/（研修資料の名前）
 ```
 
+削除後、スクリプトが使えない場合はこちらで点検する（各項目に OK/NG が表示される）。
+
+```bash
+# 確認（手動。スクリプトを使わず点検する）
+ls -a ~                                          # 研修資料・痕跡が残っていないか目視
+test -e ~/.claude && echo "NG: Claude 履歴/認証 残存" || echo "OK: Claude なし"
+test -f ~/.gitconfig && echo "NG: gitconfig 残存" || echo "OK: gitconfig なし"
+gh auth status >/dev/null 2>&1 && echo "NG: GitHub 認証残存（下流のみ）" || echo "OK: GitHub 未認証"
+command -v gh claude java mvn                     # ツールが残っているか（パスが出れば OK）
+```
+
 ---
 
 ### 3. VSCode の「最近開いたフォルダ」履歴の削除
@@ -189,26 +200,14 @@ Get-ChildItem "$env:USERPROFILE\Downloads" -Force | Where-Object { $_.Name -ne '
 Clear-RecycleBin -Force
 ```
 
----
+削除後、スクリプトが使えない場合はこちらで点検する（各項目に OK/NG が表示される）。
 
-### 5.（任意）開発環境の個別確認
-
-開発環境（ツール類）が残っているかは、**手順2の `bash cleanup.sh --check` の【2】に含まれている**ため、通常はこの手順は不要。ツール類（`gh`・`claude`・JDK・Maven）だけを個別に手動で確認したい場合は、セットアップ用の `setup.sh` を `--check` で実行する。VSCode のメニューバー → **Terminal** → **New Terminal**（または `Ctrl+@`）で VSCode 内のターミナルを開き、以下を実行する。
-
-```bash
-# ダウンロード
-curl -fsSL https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/setup.sh -o setup.sh
+```powershell
+# 確認（手動。スクリプトを使わず点検する）
+$dl = (Get-ChildItem "$env:USERPROFILE\Downloads" -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne 'desktop.ini' }).Count
+if ($dl -eq 0) { Write-Host "OK: ダウンロードフォルダ 空" } else { Write-Host "NG: ダウンロード $dl 件残存" }
+if (Test-Path "$env:APPDATA\Zoom\data") { Write-Host "NG: Zoom ログイン情報 残存" } else { Write-Host "OK: Zoom ログインなし" }
+foreach ($p in @("$env:LOCALAPPDATA\Google\Chrome\User Data\Default\History", "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\History")) {
+  if (Test-Path $p) { Write-Host "NG: ブラウザ履歴 残存 ($p)" } else { Write-Host "OK: ブラウザ履歴なし ($p)" }
+}
 ```
-
-```bash
-# 確認（--check は確認のみ。インストールは行わない）
-bash setup.sh --check
-```
-
-```bash
-# 後片付け
-rm setup.sh
-```
-
-> **すべて `[OK]`** であれば、開発環境はそのまま残っており、認証・個人データだけが消えた**セットアップ完了状態**に戻っている。これで次の研修生がそのまま研修を開始できる。
-> もし `[NG]` が出た場合は、その項目を `00_DevEnvironmentSetup.md` の手順で再セットアップすること。

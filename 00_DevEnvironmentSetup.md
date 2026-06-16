@@ -133,7 +133,9 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githu
 # インストール
 sudo apt update
 sudo apt install -y gh
+```
 
+```bash
 # 確認
 gh version
 ```
@@ -153,7 +155,9 @@ curl -fsSL https://claude.ai/install.sh | bash
 # ~/.local/bin を永続的に PATH に追加
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
+```
 
+```bash
 # 確認
 claude --version
 ```
@@ -193,7 +197,9 @@ sudo apt install -y openjdk-17-jdk
 echo 'export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))' >> ~/.bashrc
 echo 'export PATH=$JAVA_HOME/bin:$PATH' >> ~/.bashrc
 source ~/.bashrc
+```
 
+```bash
 # 確認
 java -version
 echo $JAVA_HOME
