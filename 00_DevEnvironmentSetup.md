@@ -1,4 +1,4 @@
-# 研修環境セットアップ
+# 研修環境セットアップ手順
 
 ## 準備
 
@@ -11,9 +11,9 @@
 
 ## セットアップ
 
-### 1. 管理者権限アカウントでログインする
+### 1. 管理者権限アカウントでのログイン
 
-### 2. WSL をインストールする
+### 2. WSL のインストール
 
 コマンドプロンプトを**管理者として起動**する（スタートメニューで「cmd」を右クリック → **管理者として実行**）。
 
@@ -36,7 +36,7 @@ wsl --version
 > Windows version: 10.0.x.x
 > ```
 
-### 3. Ubuntu をインストールする
+### 3. Ubuntu のインストール
 
 ```bash
 # 利用可能なLinux配布を確認
@@ -84,14 +84,11 @@ curl -fsSL https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/s
 ```
 
 ```bash
-# 実行
+# 実行（確認プロンプトが出るので y で開始。確認のみは bash setup.sh --check）
 bash setup.sh
 ```
 
-```bash
-# 後片付け
-rm setup.sh
-```
+> **注意:** 後片付け（`rm setup.sh`）は、次の A-2 の確認まで終えてから行う（確認も同じ `setup.sh` を使うため）。
 
 > **注意:** GitHub Copilot のインストールは `gh auth login` の認証完了後に手動で実行してください。
 > ```
@@ -100,30 +97,25 @@ rm setup.sh
 
 > **重要:** スクリプト完了後、`exit` で WSL を抜けて `wsl` で入り直してください。`~/.bashrc` の環境変数はシェルを再起動しないと反映されず、このまま次の確認手順に進むと Claude CLI と Maven が `[NG]` になります。
 
-##### A-2. check-setup.sh でインストール確認
+##### A-2. setup.sh --check でインストール確認
 
 > **前提:** 上記 A-1 の完了後、`exit` → `wsl` で入り直した状態で実行してください。
 
 ```bash
-# ダウンロード
-curl -fsSL https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/check-setup.sh -o check-setup.sh
-```
-
-```bash
-# 実行
-bash check-setup.sh
+# 確認（--check は確認のみ。インストールは行わない）
+bash setup.sh --check
 ```
 
 ```bash
 # 後片付け
-rm check-setup.sh
+rm setup.sh
 ```
 
 > 各項目に `[OK]` が表示されていればインストール完了。`[NG]` の場合は該当ステップを見直すこと。
 
 ---
 
-#### B. 手動でインストールする
+#### B. 手動で1つずつインストール
 
 ##### B-1. GitHub CLI のインストール
 
@@ -191,7 +183,7 @@ gh copilot --version
 > Run 'copilot update' to check for updates.
 > ```
 
-##### B-4. JDK 17 をインストールする
+##### B-4. JDK 17 のインストール
 
 ```bash
 # インストール
@@ -213,7 +205,7 @@ echo $JAVA_HOME
 > /usr/lib/jvm/java-17-openjdk-amd64
 > ```
 
-##### B-5. Maven をインストールする
+##### B-5. Maven のインストール
 
 > **注意:** apt でインストールできる Maven はバージョンが古い（3.6系）のため、以下のコマンドで公式サイトから直接取得してインストールする。
 
@@ -255,7 +247,7 @@ mvn -version
 
 ---
 
-### 5. VSCode をインストールする（利用申請完了後に実施）
+### 5. VSCode のインストール（利用申請完了後に実施）
 
 > **注意:** WSL 上では VSCode 本体は Windows 側にインストールし、WSL 拡張機能で接続する。
 
