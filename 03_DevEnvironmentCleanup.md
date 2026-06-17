@@ -8,7 +8,7 @@
 | | クリーンアップ内容 |
 |---|---|
 | **WSL側** | Claude Code 認証解除 ／ GitHub CLI 認証解除（下流工程研修のみ）／ Claude Code 履歴削除 ／ git・bash の個人痕跡削除 ／ 研修資料削除 ／ VSCode の標準外拡張機能の確認・削除 |
-| **Windows側** | ブラウザ（Chrome・Edge）の Cookie・閲覧履歴・ブックマーク・タブ/セッション削除 ／ メモ帳の未保存タブ削除 ／ Zoom のログイン情報削除 ／ ダウンロードフォルダの全削除 ／ ごみ箱を空にする |
+| **Windows側** | ブラウザ（Chrome・Edge）の Cookie・閲覧履歴・ブックマーク・タブ/セッション削除 ／ メモ帳の未保存タブ削除 ／ Zoom のログイン情報削除 ／ ダウンロードフォルダの全削除 ／ ピクチャのスクリーンショット削除 ／ ごみ箱を空にする |
 
 > **残すもの:** WSL/Ubuntu 本体、VSCode、`gh`・`claude`・JDK・Maven などのツール類と環境変数は削除しません（環境は変更しません）。
 
@@ -71,22 +71,32 @@ rm cleanup.sh
 
 #### 手動で実施する場合
 
+上から順に実行する（各ブロックは単独で貼り付け可）。
+
 ```bash
 # 1. Claude Code 認証解除（認証情報ファイルを削除。claude logout は対話画面が開く場合があるため使わない）
 rm -f ~/.claude/.credentials.json
+```
 
+```bash
 # 2. GitHub CLI 認証解除（下流工程研修のみ）
 gh auth logout
+```
 
+```bash
 # 3. Claude Code の会話・プロジェクト履歴削除
-rm -rf ~/.claude ~/.claude.json
+rm -rf ~/.claude ~/.claude.json ~/.claude.json.backup
+```
 
+```bash
 # 4. git・bash の個人痕跡削除
 rm -f ~/.gitconfig
 history -c && : > ~/.bash_history
+```
 
-# 5. 研修資料の削除（ファイル/フォルダ。複数あれば繰り返す）
-rm -rf ~/（研修資料の名前）
+```bash
+# 5. 研修資料の削除（<研修資料の名前> を実際の名前に置換。複数あれば名前を変えて繰り返す）
+rm -rf ~/<研修資料の名前>
 ```
 
 削除後、スクリプトが使えない場合はこちらで点検する（各項目に OK/NG が表示される）。
@@ -130,10 +140,11 @@ Invoke-WebRequest -Uri https://raw.githubusercontent.com/katyoid57/file-share/ma
 powershell -ExecutionPolicy Bypass -File "$env:TEMP\cleanup.ps1"
 ```
 
-実行すると、まず**「クリーンアップを実行しますか？」と確認される**ので `y` で開始する。続いてブラウザ（Chrome・Edge）・メモ帳・Zoom が終了され、ブラウザの Cookie・閲覧履歴・ブックマーク・タブ/セッション（最近閉じたタブ等）とメモ帳の未保存タブ、Zoom のログイン情報が削除される（Zoom は次回起動時に再ログインが必要な状態になる）。さらに**ダウンロードフォルダの全削除確認**を求められるので、ここでも `y` で実行する（`y` を打つのは「開始」と「ダウンロード削除」の計2回）。最後にごみ箱が空になる。
+実行すると、まず**「クリーンアップを実行しますか？」と確認される**ので `y` で開始する。続いてブラウザ（Chrome・Edge）・メモ帳・Zoom が終了され、ブラウザの Cookie・閲覧履歴・ブックマーク・タブ/セッション（最近閉じたタブ等）とメモ帳の未保存タブ、Zoom のログイン情報が削除される（Zoom は次回起動時に再ログインが必要な状態になる）。さらに**ダウンロードフォルダの全削除確認**を求められるので、ここでも `y` で実行する（`y` を打つのは「開始」と「ダウンロード削除」の計2回）。そのあと**ピクチャのスクリーンショット**（Snipping Tool の自動保存や Win+PrtScn で `ピクチャ\Screenshots` に溜まる画像）が削除される。最後にごみ箱が空になる。
 
 > **注意:** ダウンロードフォルダは**中身がすべて削除**されます。残したいファイルがある場合は事前に退避してください。
 > **注意:** ブラウザとメモ帳は自動で終了されます。**未保存の内容は破棄されます**ので、残したい作業がある場合は事前に保存してください。
+> **注意:** `ピクチャ\Screenshots` フォルダの中身は**確認なしですべて削除**されます（ダウンロードと違い個別確認はありません）。残したいスクリーンショットがある場合は事前に退避してください。
 > **注意:** ダウンロードフォルダ内のフォルダを **VSCode で開いている**（ワークスペースにしている）と、ファイルがロックされて削除できず残ります。`cleanup.ps1` は VSCode を終了させないため、**先に VSCode で File → Close Folder（またはVSCodeを閉じる）してから**実行してください。研修資料を誤って WSL ではなくダウンロード内に展開・配置したケースで起こりやすいです。
 
 #### cleanup.ps1 -Check でクリーンアップ確認
@@ -173,12 +184,14 @@ Remove-Item (Join-Path ([Environment]::GetFolderPath('MyDocuments')) "<名前>")
 
 #### 手動で実施する場合
 
-PowerShell で以下を実行する。
+PowerShell で上から順に実行する（各ブロックは単独で貼り付け可）。
 
 ```powershell
 # 1. ブラウザ・メモ帳・Zoom を終了する（未保存内容ごと閉じる）
 Get-Process chrome, msedge, notepad, Zoom -ErrorAction SilentlyContinue | Stop-Process -Force
+```
 
+```powershell
 # 2. ブラウザ（Chrome・Edge）の Cookie・履歴・ブックマーク・タブ/セッションを削除
 $targets = 'Network\Cookies','Cookies','History','Bookmarks','Bookmarks.bak',
            'Current Session','Current Tabs','Last Session','Last Tabs','Sessions','Top Sites','Visited Links'
@@ -186,17 +199,31 @@ $targets = 'Network\Cookies','Cookies','History','Bookmarks','Bookmarks.bak',
   $prof = $_
   $targets | ForEach-Object { Remove-Item (Join-Path $prof $_) -Recurse -Force -ErrorAction SilentlyContinue }
 }
+```
 
+```powershell
 # 3. メモ帳の未保存タブを削除
 Remove-Item "$env:LOCALAPPDATA\Packages\Microsoft.WindowsNotepad_8wekyb3d8bbwe\LocalState\TabState\*" -Recurse -Force -ErrorAction SilentlyContinue
+```
 
+```powershell
 # 4. Zoom のログイン情報を削除（次回起動時に再ログインが必要＝ログアウト状態になる）
 Remove-Item "$env:APPDATA\Zoom\data" -Recurse -Force -ErrorAction SilentlyContinue
+```
 
+```powershell
 # 5. ダウンロードフォルダの中身を全削除（desktop.ini は除く）
 Get-ChildItem "$env:USERPROFILE\Downloads" -Force | Where-Object { $_.Name -ne 'desktop.ini' } | Remove-Item -Recurse -Force
+```
 
-# 6. ごみ箱を空にする
+```powershell
+# 6. ピクチャのスクリーンショットを削除（Snipping Tool の自動保存・Win+PrtScn の保存先。desktop.ini は除く）
+$shots = Join-Path ([Environment]::GetFolderPath('MyPictures')) 'Screenshots'
+if (Test-Path $shots) { Get-ChildItem $shots -Force | Where-Object { $_.Name -ne 'desktop.ini' } | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue }
+```
+
+```powershell
+# 7. ごみ箱を空にする
 Clear-RecycleBin -Force
 ```
 
@@ -206,6 +233,9 @@ Clear-RecycleBin -Force
 # 確認（手動。スクリプトを使わず点検する）
 $dl = (Get-ChildItem "$env:USERPROFILE\Downloads" -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne 'desktop.ini' }).Count
 if ($dl -eq 0) { Write-Host "OK: ダウンロードフォルダ 空" } else { Write-Host "NG: ダウンロード $dl 件残存" }
+$shots = Join-Path ([Environment]::GetFolderPath('MyPictures')) 'Screenshots'
+$sc = (Get-ChildItem $shots -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne 'desktop.ini' }).Count
+if ($sc -eq 0) { Write-Host "OK: スクリーンショット なし" } else { Write-Host "NG: スクリーンショット $sc 件残存" }
 if (Test-Path "$env:APPDATA\Zoom\data") { Write-Host "NG: Zoom ログイン情報 残存" } else { Write-Host "OK: Zoom ログインなし" }
 foreach ($p in @("$env:LOCALAPPDATA\Google\Chrome\User Data\Default\History", "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\History")) {
   if (Test-Path $p) { Write-Host "NG: ブラウザ履歴 残存 ($p)" } else { Write-Host "OK: ブラウザ履歴なし ($p)" }

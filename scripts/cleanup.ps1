@@ -2,7 +2,7 @@
 # 実行: powershell -ExecutionPolicy Bypass -File .\cleanup.ps1          … クリーンアップ（削除）を行う
 # 確認: powershell -ExecutionPolicy Bypass -File .\cleanup.ps1 -Check   … 確認のみ（read-only。何度でも安全に実行可）
 #   ブラウザ(Chrome/Edge)のCookie・履歴・ブックマーク・タブ削除、メモ帳の未保存タブ削除、Zoom のログイン情報削除、
-#   ダウンロードフォルダの全削除、ごみ箱を空にする。
+#   ダウンロードフォルダの全削除、ピクチャのスクリーンショット削除、ごみ箱を空にする。
 param([switch]$Check)
 
 $ErrorActionPreference = 'Continue'
@@ -19,6 +19,19 @@ function Invoke-Check {
     Write-Host "[OK] ダウンロードフォルダ: 空です" -ForegroundColor Green
   } else {
     Write-Host "[NG] ダウンロードフォルダ: $count 項目が残っています" -ForegroundColor Red
+  }
+
+  # ピクチャのスクリーンショットの確認（Snipping Tool の自動保存・Win+PrtScn の保存先）
+  $screenshots = Join-Path ([Environment]::GetFolderPath('MyPictures')) 'Screenshots'
+  if (Test-Path $screenshots) {
+    $shotCount = (Get-ChildItem -Path $screenshots -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne 'desktop.ini' } | Measure-Object).Count
+    if ($shotCount -eq 0) {
+      Write-Host "[OK] スクリーンショット: ピクチャ内に残っていません" -ForegroundColor Green
+    } else {
+      Write-Host "[NG] スクリーンショット: $shotCount 項目が残っています" -ForegroundColor Red
+    }
+  } else {
+    Write-Host "[--] スクリーンショット: フォルダがありません（保存されていません）" -ForegroundColor Yellow
   }
 
   # ブラウザデータの確認
@@ -163,7 +176,24 @@ function Invoke-Cleanup {
     Write-Host "  ダウンロードフォルダは既に空です。"
   }
 
-  # 6. ごみ箱を空にする
+  # 6. ピクチャのスクリーンショットを削除する（Snipping Tool の自動保存・Win+PrtScn の保存先）
+  Write-Host ""
+  Write-Host "=== ピクチャのスクリーンショットを削除します ===" -ForegroundColor Cyan
+  $screenshots = Join-Path ([Environment]::GetFolderPath('MyPictures')) 'Screenshots'
+  if (Test-Path $screenshots) {
+    # desktop.ini はフォルダの表示設定を保持するシステムファイルなので削除対象から除外する
+    $shots = Get-ChildItem -Path $screenshots -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne 'desktop.ini' }
+    if ($shots) {
+      $shots | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+      Write-Host "  ピクチャ内のスクリーンショット $($shots.Count) 項目を削除しました。"
+    } else {
+      Write-Host "  ピクチャ内にスクリーンショットはありません。"
+    }
+  } else {
+    Write-Host "  スキップ: スクリーンショットフォルダはありません（保存されていません）。"
+  }
+
+  # 7. ごみ箱を空にする
   Write-Host ""
   Write-Host "=== ごみ箱を空にします ===" -ForegroundColor Cyan
   Clear-RecycleBin -Force -ErrorAction SilentlyContinue
