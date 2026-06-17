@@ -41,7 +41,9 @@ wsl --version
 ```bash
 # 利用可能なLinux配布を確認
 wsl.exe --list --online
+```
 
+```bash
 # インストール
 wsl.exe --install Ubuntu-22.04
 ```
