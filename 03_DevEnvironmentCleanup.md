@@ -58,11 +58,8 @@ rm cleanup.sh
 
 > この確認では、**【1】個人データが消えたか**（認証・履歴・git・研修資料・拡張機能）と、**【2】開発環境が残っているか**（gh／claude／JDK／Maven 等のツール）の両方を点検する。**【1】がすべて `[OK]`／`[--]`、【2】がすべて `[OK]`** であれば、次の研修生に渡せる状態（セットアップ完了状態）。`[NG]` の場合は該当ステップを見直すこと。
 
-> **VSCode 拡張機能:** `[NG]` で拡張機能IDが表示されたら、標準セット（WSL／Java／Spring Boot／Office Viewer〔上流工程研修のみ〕とその関連）外に研修生が追加した拡張です。不要なら ID を指定して削除する。
-> ```bash
-> code --uninstall-extension <拡張機能ID>
-> ```
-> ※ **VSCode 内の WSL ターミナル**で実行する（`code` コマンドが必要）。削除後にもう一度 `bash cleanup.sh --check` で確認できる。
+> **VSCode 拡張機能:** `[NG]` で拡張機能IDが表示されたら、標準セット（WSL／Java／Spring Boot／Office Viewer〔上流工程研修のみ〕とその関連）外に研修生が追加した拡張です。不要なら Extensions view（`Ctrl+Shift+X`）で該当拡張を検索し、歯車アイコン → **Uninstall** で削除する。削除後にもう一度 `bash cleanup.sh --check` で確認できる。
+> ※ 検出（`--check`）は `code` コマンドを使うため **VSCode 内の WSL ターミナル**で実行する。`code` が見つからない場合は `[--]` と表示される。
 
 #### 手動で実施する場合
 
