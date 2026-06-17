@@ -1,6 +1,6 @@
 #!/bin/bash
 # 研修PCクリーンアップ（WSL側）
-# 実行: bash cleanup.sh          … クリーンアップ（削除）を行う
+# 実行: bash cleanup.sh          … クリーンアップ（削除）を行い、完了後に確認（--check 相当）も自動実行する
 # 確認: bash cleanup.sh --check  … 個人データが消えたか＋開発環境が残っているかを確認する（read-only。何度でも安全に実行可）
 
 GREEN='\033[0;32m'
@@ -221,9 +221,6 @@ run_cleanup() {
 
   echo ""
   echo "=== WSL側のクリーンアップ完了 ==="
-  echo "※ bash cleanup.sh --check で「渡せる状態」になったか確認できます。"
-  echo "※ bash 履歴を完全に消すため、作業後はこのターミナルを閉じてください。"
-  echo "※ 続けて Windows 側のクリーンアップ（cleanup.ps1）を実施してください。"
 }
 
 # ===== エントリポイント =====
@@ -237,4 +234,16 @@ else
     exit 0
   fi
   run_cleanup
+
+  # 削除に続けて確認（--check 相当）を自動実行する（read-only）。
+  # run_cleanup の set -e / ERR トラップを解除してから回す（確認内の非ゼロ終了で止めないため）。
+  set +e
+  trap - ERR
+  echo ""
+  echo "続けて確認を行います（bash cleanup.sh --check と同じ内容）。"
+  echo ""
+  run_check
+  echo ""
+  echo "※ bash 履歴を完全に消すため、作業後はこのターミナルを閉じてください。"
+  echo "※ 続けて Windows 側のクリーンアップ（cleanup.ps1）を実施してください。"
 fi

@@ -1,5 +1,5 @@
 # 研修PCクリーンアップ（Windows側）
-# 実行: powershell -ExecutionPolicy Bypass -File .\cleanup.ps1          … クリーンアップ（削除）を行う
+# 実行: powershell -ExecutionPolicy Bypass -File .\cleanup.ps1          … クリーンアップ（削除）を行い、完了後に確認（-Check 相当）も自動実行する
 # 確認: powershell -ExecutionPolicy Bypass -File .\cleanup.ps1 -Check   … 確認のみ（read-only。何度でも安全に実行可）
 #   ブラウザ(Chrome/Edge)のCookie・履歴・ブックマーク・タブ削除、メモ帳の未保存タブ削除、Zoom のログイン情報削除、
 #   ダウンロードフォルダの全削除、ピクチャのスクリーンショット削除、ごみ箱を空にする。
@@ -201,7 +201,6 @@ function Invoke-Cleanup {
 
   Write-Host ""
   Write-Host "=== Windows側のクリーンアップ完了 ===" -ForegroundColor Green
-  Write-Host "  ※ -Check を付けて再実行すると、クリーンアップ済みか確認できます。"
 }
 
 # ===== エントリポイント =====
@@ -215,4 +214,10 @@ if ($Check) {
     return
   }
   Invoke-Cleanup
+
+  # 削除に続けて確認（-Check 相当）を自動実行する（read-only）
+  Write-Host ""
+  Write-Host "続けて確認を行います（-Check と同じ内容）。" -ForegroundColor Cyan
+  Write-Host ""
+  Invoke-Check
 }
