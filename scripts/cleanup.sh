@@ -7,6 +7,29 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
 
+# 標準セット外の VSCode 拡張を検出し、グローバル配列 EXTRA に格納する。
+# セットアップでインストールする標準拡張の発行元（publisher）で判定する。
+# 拡張パック（Java/Spring）は子拡張を多数導入するため、ID 個別ではなく発行元で判定する。
+#   ms-vscode-remote … WSL ／ vscjava・redhat・vmware・VisualStudioExptTeam … Java/Spring Boot 拡張パックと依存
+#   cweijan … Office Viewer（上流工程研修のみ）
+# 戻り値: 0=code あり（EXTRA に結果格納） / 1=code が無い（検出不可）
+detect_extra_extensions() {
+  EXTRA=()
+  command -v code > /dev/null 2>&1 || return 1
+  local KNOWN_PUBLISHERS="ms-vscode-remote vscjava redhat vmware VisualStudioExptTeam cweijan"
+  local ext pub
+  while IFS= read -r ext; do
+    [ -z "$ext" ] && continue
+    # 拡張機能ID（publisher.name）形式でない行は無視する（環境によっては code が見出し行等を出すため）
+    [[ "$ext" =~ ^[^[:space:]]+\.[^[:space:]]+$ ]] || continue
+    pub="${ext%%.*}"
+    if ! echo " $KNOWN_PUBLISHERS " | grep -qi " $pub "; then
+      EXTRA+=("$ext")
+    fi
+  done < <(code --list-extensions 2>/dev/null)
+  return 0
+}
+
 # ===== 確認モード（--check）: 「次の研修生に渡せる状態か」を確認する（read-only）=====
 run_check() {
   check_command() {
@@ -76,31 +99,15 @@ run_check() {
     fi
   fi
 
-  # VSCode 拡張機能の確認（研修生が追加した標準セット外の拡張を検出）
+  # VSCode 拡張機能の確認（研修生が追加した標準セット外の拡張を検出。read-only。削除はしない）
   echo ""
-  if command -v code > /dev/null 2>&1; then
-    # セットアップでインストールする標準拡張の発行元（publisher）。
-    # 拡張パック（Java/Spring）は子拡張を多数導入するため、ID 個別ではなく発行元で判定する。
-    #   ms-vscode-remote … WSL ／ vscjava・redhat・vmware・VisualStudioExptTeam … Java/Spring Boot 拡張パックと依存
-    #   cweijan … Office Viewer（上流工程研修のみ）
-    KNOWN_PUBLISHERS="ms-vscode-remote vscjava redhat vmware VisualStudioExptTeam cweijan"
-    EXTRA=()
-    while IFS= read -r ext; do
-      [ -z "$ext" ] && continue
-      # 拡張機能ID（publisher.name）形式でない行は無視する（環境によっては code が見出し行等を出すため）
-      [[ "$ext" =~ ^[^[:space:]]+\.[^[:space:]]+$ ]] || continue
-      pub="${ext%%.*}"
-      if ! echo " $KNOWN_PUBLISHERS " | grep -qi " $pub "; then
-        EXTRA+=("$ext")
-      fi
-    done < <(code --list-extensions 2>/dev/null)
-
+  if detect_extra_extensions; then
     if [ ${#EXTRA[@]} -eq 0 ]; then
       echo -e "${GREEN}[OK]${NC} VSCode 拡張機能: 標準セット以外の拡張は見つかりませんでした"
     else
       echo -e "${RED}[NG]${NC} VSCode 拡張機能: 標準セット以外の拡張が ${#EXTRA[@]} 件あります（研修生が追加した可能性）"
       for e in "${EXTRA[@]}"; do echo "    - $e"; done
-      echo "    → 不要であれば次で削除: code --uninstall-extension <拡張機能ID>"
+      echo "    → クリーンアップ実行（bash cleanup.sh）で一覧表示し、確認のうえまとめて削除できます"
     fi
   else
     echo -e "${GREEN}[--]${NC} VSCode 拡張機能: code コマンドが見つかりません（VSCode の WSL ターミナルで実行してください）"
@@ -218,6 +225,33 @@ run_cleanup() {
       echo "見つかりません（既に削除済みの可能性）: $TARGET"
     fi
   done
+
+  # 6. VSCode 標準セット外拡張の削除（研修生が追加した拡張。発行元で判定し、一覧→確認→ループ削除）
+  echo ""
+  CURRENT_STEP="VSCode 標準外拡張の削除"
+  echo "=== $CURRENT_STEP ==="
+  if detect_extra_extensions; then
+    if [ ${#EXTRA[@]} -eq 0 ]; then
+      echo "→ 標準セット以外の拡張は見つかりませんでした。"
+    else
+      echo "標準セット以外の拡張が ${#EXTRA[@]} 件あります（研修生が追加した可能性）:"
+      for e in "${EXTRA[@]}"; do echo "  - $e"; done
+      read -p "これらをまとめてアンインストールしますか？ [y/N]: " EXT_CONFIRM
+      if [ "$EXT_CONFIRM" = "y" ] || [ "$EXT_CONFIRM" = "Y" ]; then
+        for e in "${EXTRA[@]}"; do
+          if code --uninstall-extension "$e" > /dev/null 2>&1; then
+            echo "  削除しました: $e"
+          else
+            echo "  削除に失敗（手動で確認してください）: $e"
+          fi
+        done
+      else
+        echo "→ 削除をスキップしました。"
+      fi
+    fi
+  else
+    echo "→ code コマンドが無いためスキップします（VSCode の WSL ターミナルで実行してください）。"
+  fi
 
   echo ""
   echo "=== WSL側のクリーンアップ完了 ==="
