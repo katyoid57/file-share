@@ -27,6 +27,12 @@
 
 ### 2. WSL側のクリーンアップ
 
+以下の **A**（スクリプトで一括）または **B**（手動で1つずつ）のどちらかを実施する。**A を推奨**する。
+
+---
+
+#### A. スクリプトで一括（推奨）
+
 VSCode のメニューバー → **Terminal** → **New Terminal**（または `Ctrl+@`）で VSCode 内のターミナルを開き、以下を実行する。
 
 ```bash
@@ -51,7 +57,9 @@ bash cleanup.sh
 > **補足:** 後から点検し直したい場合は `bash cleanup.sh --check`（read-only。何度でも安全）。済んだら `rm cleanup.sh` で後片付けする。
 > **補足:** bash 履歴を完全に消すため、作業後はこのターミナルを閉じてください。
 
-#### 手動で実施する場合
+---
+
+#### B. 手動で1つずつ
 
 上から順に実行する。
 
@@ -81,7 +89,7 @@ history -c && : > ~/.bash_history
 rm -rf ~/<研修資料の名前>
 ```
 
-削除後、スクリプトが使えない場合はこちらで点検する（各項目に OK/NG が表示される）。
+削除後、こちらで点検する（各項目に OK/NG が表示される）。
 
 ```bash
 # 確認（手動。スクリプトを使わず点検する）
@@ -106,7 +114,13 @@ VSCode を起動し、**File** → **Open Recent** → **Clear Recently Opened..
 
 Windows のスタートメニューで **「PowerShell」** を検索して起動する。
 
-まず、**スクリプトをダウンロード**しておく。先に取得しておけば、クリーンアップ後にブラウザを開き直してスクリプトを取りに行く必要がなくなる。実行も確認も同じ `cleanup.ps1` を使う（確認は `-Check` を付ける）。
+以下の **A**（スクリプトで一括）または **B**（手動で1つずつ）のどちらかを実施する。**A を推奨**する。
+
+---
+
+#### A. スクリプトで一括（推奨）
+
+まず、**スクリプトをダウンロード**しておく。先に取得しておけば、クリーンアップ後にブラウザを開き直してスクリプトを取りに行く必要がなくなる。
 
 ```powershell
 # ダウンロード（TEMP に保存。作業フォルダの権限に依存しない）
@@ -128,23 +142,11 @@ powershell -ExecutionPolicy Bypass -File "$env:TEMP\cleanup.ps1"
 
 > **注意:** ダウンロードフォルダの中身・`ピクチャ\Screenshots`・ブラウザ/メモ帳の未保存内容は削除されます。残したいものは事前に保存・退避してください。
 
-#### 確認結果の見方・後片付け
-
 > 各項目に `[OK]` が表示されていればクリーンアップ完了。`[NG]` の場合は該当ステップを見直すこと。
 
-後から点検し直したい場合は、削除を伴わない確認のみ（read-only）を再実行できる。
+> **補足:** 後から点検し直したい場合は `powershell -ExecutionPolicy Bypass -File "$env:TEMP\cleanup.ps1" -Check`（read-only。何度でも安全）。済んだら `Remove-Item "$env:TEMP\cleanup.ps1"` で後片付けする。
 
-```powershell
-# 再確認（-Check は確認のみ。削除は行わない）
-powershell -ExecutionPolicy Bypass -File "$env:TEMP\cleanup.ps1" -Check
-```
-
-```powershell
-# 後片付け
-Remove-Item "$env:TEMP\cleanup.ps1" -ErrorAction SilentlyContinue
-```
-
-#### デスクトップ・ドキュメントの余分なファイル確認
+##### デスクトップ・ドキュメントの余分なファイル確認
 
 確認（自動実行または `-Check`）の出力に、**デスクトップ／ドキュメント**にあるファイル・フォルダ一覧が `[情報]` として表示される（合否判定はしない）。`Visual Studio Code` などセットアップ手順で作られたもの以外（研修生が作成したファイル・ショートカット等）があれば削除する。
 
@@ -163,7 +165,9 @@ Remove-Item (Join-Path ([Environment]::GetFolderPath('MyDocuments')) "<名前>")
 > **注意:** `-Recurse -Force` は確認なしで削除します。`<名前>` が一覧に表示されたものと一致しているか確認してから実行してください。
 > 削除後にもう一度 `cleanup.ps1 -Check` を実行すると、消えたか確認できます。
 
-#### 手動で実施する場合
+---
+
+#### B. 手動で1つずつ
 
 PowerShell で上から順に実行する。
 
@@ -208,7 +212,7 @@ if (Test-Path $shots) { Get-ChildItem $shots -Force | Where-Object { $_.Name -ne
 Clear-RecycleBin -Force
 ```
 
-削除後、スクリプトが使えない場合はこちらで点検する（各項目に OK/NG が表示される）。
+削除後、こちらで点検する（各項目に OK/NG が表示される）。
 
 ```powershell
 # 確認（手動。スクリプトを使わず点検する）
