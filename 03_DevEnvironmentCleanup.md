@@ -54,8 +54,15 @@ bash cleanup.sh
 > **VSCode 拡張機能:** 標準セット（WSL／Java／Spring Boot／Office Viewer〔上流工程研修のみ〕とその関連）外の拡張は、上記のとおりクリーンアップ実行中に一覧表示され `y` で削除できる（研修生が追加した拡張の整理）。確認（`--check`）では削除せず `[NG]` で残存を知らせるだけ。手動で消すなら Extensions view（`Ctrl+Shift+X`）→ 歯車アイコン → **Uninstall**。
 > ※ 拡張の検出・削除は `code` コマンドを使うため、**VSCode 内の WSL ターミナル**で実行する。`code` が無い場合は `[--]`（スキップ）と表示される。
 
-> **補足:** 後から点検し直したい場合は `bash cleanup.sh --check`（read-only。何度でも安全）。済んだら `rm cleanup.sh` で後片付けする。
+> **補足:** 後から点検し直したい場合は `bash cleanup.sh --check`（read-only。何度でも安全）。
 > **補足:** bash 履歴を完全に消すため、作業後はこのターミナルを閉じてください。
+
+最後に、ダウンロードしたスクリプトを削除する（後から再確認する場合は、先に `--check` を実行してから削除する）。
+
+```bash
+# 後片付け
+rm cleanup.sh
+```
 
 ---
 
@@ -144,7 +151,7 @@ powershell -ExecutionPolicy Bypass -File "$env:TEMP\cleanup.ps1"
 
 > 各項目に `[OK]` が表示されていればクリーンアップ完了。`[NG]` の場合は該当ステップを見直すこと。
 
-> **補足:** 後から点検し直したい場合は `powershell -ExecutionPolicy Bypass -File "$env:TEMP\cleanup.ps1" -Check`（read-only。何度でも安全）。済んだら `Remove-Item "$env:TEMP\cleanup.ps1"` で後片付けする。
+> **補足:** 後から点検し直したい場合は `powershell -ExecutionPolicy Bypass -File "$env:TEMP\cleanup.ps1" -Check`（read-only。何度でも安全）。
 
 ##### デスクトップ・ドキュメントの余分なファイル確認
 
@@ -164,6 +171,13 @@ Remove-Item (Join-Path ([Environment]::GetFolderPath('MyDocuments')) "<名前>")
 
 > **注意:** `-Recurse -Force` は確認なしで削除します。`<名前>` が一覧に表示されたものと一致しているか確認してから実行してください。
 > 削除後にもう一度 `cleanup.ps1 -Check` を実行すると、消えたか確認できます。
+
+最後に、ダウンロードしたスクリプトを削除する（後から再確認する場合は、先に `-Check` を実行してから削除する）。
+
+```powershell
+# 後片付け
+Remove-Item "$env:TEMP\cleanup.ps1" -ErrorAction SilentlyContinue
+```
 
 ---
 
