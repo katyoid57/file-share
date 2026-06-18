@@ -1,4 +1,4 @@
-# 研修PCクリーンアップ（Windows側）
+﻿# 研修PCクリーンアップ（Windows側）
 # 実行: powershell -ExecutionPolicy Bypass -File .\cleanup.ps1          … クリーンアップ（削除）を行い、完了後に確認（-Check 相当）も自動実行する
 # 確認: powershell -ExecutionPolicy Bypass -File .\cleanup.ps1 -Check   … 確認のみ（read-only。何度でも安全に実行可）
 #   ブラウザ(Chrome/Edge)のCookie・履歴・ブックマーク・タブ削除、メモ帳の未保存タブ削除、Zoom のログイン情報削除、
