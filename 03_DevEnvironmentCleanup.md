@@ -157,9 +157,9 @@ powershell -ExecutionPolicy Bypass -File "$env:TEMP\cleanup.ps1"
 
 > **補足:** 後から点検し直したい場合は `powershell -ExecutionPolicy Bypass -File "$env:TEMP\cleanup.ps1" -Check`（read-only。何度でも安全）。
 
-##### A-2. デスクトップ・ドキュメントの余分なファイル確認
+##### A-2. デスクトップ・ドキュメント・ピクチャの余分なファイル確認
 
-確認（自動実行または `-Check`）の出力に、**デスクトップ／ドキュメント**にあるファイル・フォルダ一覧が `[情報]` として表示される（合否判定はしない）。`Visual Studio Code` などセットアップ手順で作られたもの以外（研修生が作成したファイル・ショートカット等）があれば削除する。
+確認（自動実行または `-Check`）の出力に、**デスクトップ／ドキュメント／ピクチャ**にあるファイル・フォルダ一覧が `[情報]` として表示される（合否判定はしない）。`Visual Studio Code` などセットアップ手順で作られたもの以外（研修生が作成したファイル・ショートカット等）があれば削除する。
 
 削除する場合は、エクスプローラーで右クリック → 削除するか、PowerShell で以下を実行する（`<名前>` を一覧に出た実際の名前に置き換える）。
 
@@ -171,6 +171,11 @@ Remove-Item (Join-Path ([Environment]::GetFolderPath('Desktop')) "<名前>") -Re
 ```powershell
 # ドキュメントのファイル/フォルダを削除
 Remove-Item (Join-Path ([Environment]::GetFolderPath('MyDocuments')) "<名前>") -Recurse -Force
+```
+
+```powershell
+# ピクチャのファイル/フォルダを削除
+Remove-Item (Join-Path ([Environment]::GetFolderPath('MyPictures')) "<名前>") -Recurse -Force
 ```
 
 > **注意:** `-Recurse -Force` は確認なしで削除します。`<名前>` が一覧に表示されたものと一致しているか確認してから実行してください。

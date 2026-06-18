@@ -75,12 +75,13 @@ function Invoke-Check {
     Write-Host "[--] Zoom: 利用されていません（未ログインまたは未インストール）" -ForegroundColor Yellow
   }
 
-  # デスクトップ / ドキュメントのファイル・フォルダ一覧（参考表示のみ。判定はしない。
+  # デスクトップ / ドキュメント / ピクチャ のファイル・フォルダ一覧（参考表示のみ。判定はしない。
   # ショートカットに限らず全項目を表示する。セットアップ手順以外があれば手動で削除する）
   # -Force を付けないので隠しファイル・システムファイル（desktop.ini 等）は除外される
   $listDirs = @(
     @{ Name = 'デスクトップ';   Path = [Environment]::GetFolderPath('Desktop') },
-    @{ Name = 'ドキュメント';   Path = [Environment]::GetFolderPath('MyDocuments') }
+    @{ Name = 'ドキュメント';   Path = [Environment]::GetFolderPath('MyDocuments') },
+    @{ Name = 'ピクチャ';       Path = [Environment]::GetFolderPath('MyPictures') }
   )
   foreach ($d in $listDirs) {
     Write-Host ""
