@@ -32,6 +32,9 @@ detect_extra_extensions() {
 
 # ===== 確認モード（--check）: 「次の研修生に渡せる状態か」を確認する（read-only）=====
 run_check() {
+  # mode="after-cleanup" のとき、研修資料のホーム一覧は再表示しない
+  # （直前のクリーンアップ手順で同じ一覧を表示済みのため）
+  local mode="$1"
   check_command() {
     local name=$1
     local cmd=$2
@@ -70,33 +73,26 @@ run_check() {
     echo -e "${GREEN}[OK]${NC} git 設定: ~/.gitconfig 削除済み"
   fi
 
-  # 研修資料の確認
+  # 研修資料の確認（read-only。一覧を目視で確認する。対話入力はしない）
   echo ""
-  # 研修資料は ~/ 直下にファイル・フォルダがバラけてコピーされる場合があるため、
-  # フォルダだけでなく隠しファイルを除く全項目を表示する
-  echo "現在ホーム（~）にあるファイル・フォルダ（隠しファイルを除く）:"
-  shopt -s nullglob
-  HOME_ITEMS=("$HOME"/*)
-  shopt -u nullglob
-  if [ ${#HOME_ITEMS[@]} -gt 0 ]; then
-    for item in "${HOME_ITEMS[@]}"; do
-      if [ -d "$item" ]; then echo "  - $(basename "$item")/"; else echo "  - $(basename "$item")"; fi
-    done
+  if [ "$mode" = "after-cleanup" ]; then
+    # クリーンアップ直後は削除手順で同じ一覧を表示済みのため、再表示しない
+    echo -e "${GREEN}[--]${NC} 研修資料: クリーンアップ手順で削除（上の一覧に残っていなければ完了）"
   else
-    echo "  （ありません）"
-  fi
-  echo ""
-  read -p "削除を確認したい研修資料の名前を入力してください（ファイル/フォルダ可。不明/不要なら空欄のまま Enter でスキップ）: " FOLDER_NAME
-
-  if [ -z "$FOLDER_NAME" ]; then
-    echo -e "${GREEN}[--]${NC} 研修資料: 確認をスキップしました（上記一覧に研修資料が無ければ削除済み）"
-  else
-    TARGET="$HOME/$FOLDER_NAME"
-    if [ -e "$TARGET" ]; then
-      echo -e "${RED}[NG]${NC} 研修資料: $TARGET が残っています"
+    # 研修資料は ~/ 直下にファイル・フォルダがバラけてコピーされる場合があるため、
+    # フォルダだけでなく隠しファイルを除く全項目を表示する
+    echo "現在ホーム（~）にあるファイル・フォルダ（隠しファイルを除く）:"
+    shopt -s nullglob
+    HOME_ITEMS=("$HOME"/*)
+    shopt -u nullglob
+    if [ ${#HOME_ITEMS[@]} -gt 0 ]; then
+      for item in "${HOME_ITEMS[@]}"; do
+        if [ -d "$item" ]; then echo "  - $(basename "$item")/"; else echo "  - $(basename "$item")"; fi
+      done
     else
-      echo -e "${GREEN}[OK]${NC} 研修資料: $TARGET は存在しません"
+      echo "  （ありません）"
     fi
+    echo -e "${GREEN}[--]${NC} 研修資料: 上記一覧に研修資料が無ければ削除済み"
   fi
 
   # VSCode 拡張機能の確認（研修生が追加した標準セット外の拡張を検出。read-only。削除はしない）
@@ -274,9 +270,9 @@ else
   set +e
   trap - ERR
   echo ""
-  echo "続けて確認を行います（bash cleanup.sh --check と同じ内容）。"
+  echo "続けて確認を行います。"
   echo ""
-  run_check
+  run_check after-cleanup
   echo ""
   echo "※ bash 履歴を完全に消すため、作業後はこのターミナルを閉じてください。"
   echo "※ 続けて Windows 側のクリーンアップ（cleanup.ps1）を実施してください。"
