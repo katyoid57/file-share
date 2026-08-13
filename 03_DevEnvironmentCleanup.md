@@ -266,7 +266,8 @@ Remove-Item 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\TypedPaths
 # C:\ 直下の標準以外のフォルダを列挙（研修生が作成した可能性）
 $std = @('Windows','Program Files','Program Files (x86)','ProgramData','Users','PerfLogs',
          'Recovery','$Recycle.Bin','System Volume Information','$WinREAgent','$SysReset',
-         'OneDriveTemp','Intel','Drivers','AMD','NVIDIA','Config.Msi','Documents and Settings')
+         'OneDriveTemp','Intel','Drivers','AMD','NVIDIA','Config.Msi','Documents and Settings',
+         'inetpub','Quarantine','SWSetup')
 Get-ChildItem 'C:\' -Directory -Force -ErrorAction SilentlyContinue | Where-Object { $std -notcontains $_.Name } | ForEach-Object { "C:\$($_.Name)" }
 ```
 
@@ -301,7 +302,8 @@ $rc = (Get-ChildItem "$env:APPDATA\Microsoft\Windows\Recent" -File -Force -Error
 if ($rc -eq 0) { Write-Host "OK: エクスプローラー最近使ったファイル なし" } else { Write-Host "NG: エクスプローラー履歴 $rc 件残存" }
 $std = @('Windows','Program Files','Program Files (x86)','ProgramData','Users','PerfLogs',
          'Recovery','$Recycle.Bin','System Volume Information','$WinREAgent','$SysReset',
-         'OneDriveTemp','Intel','Drivers','AMD','NVIDIA','Config.Msi','Documents and Settings')
+         'OneDriveTemp','Intel','Drivers','AMD','NVIDIA','Config.Msi','Documents and Settings',
+         'inetpub','Quarantine','SWSetup')
 $extra = Get-ChildItem 'C:\' -Directory -Force -ErrorAction SilentlyContinue | Where-Object { $std -notcontains $_.Name }
 if (-not $extra) { Write-Host "OK: C:\ 直下 非標準フォルダなし" } else { $extra | ForEach-Object { Write-Host "NG: C:\ 直下 非標準フォルダ残存 (C:\$($_.Name))" } }
 ```

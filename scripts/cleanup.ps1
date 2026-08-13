@@ -14,7 +14,8 @@ $ErrorActionPreference = 'Continue'
 $StandardRootDirs = @(
   'Windows', 'Program Files', 'Program Files (x86)', 'ProgramData', 'Users', 'PerfLogs',
   'Recovery', '$Recycle.Bin', 'System Volume Information', '$WinREAgent', '$SysReset',
-  'OneDriveTemp', 'Intel', 'Drivers', 'AMD', 'NVIDIA', 'Config.Msi', 'Documents and Settings'
+  'OneDriveTemp', 'Intel', 'Drivers', 'AMD', 'NVIDIA', 'Config.Msi', 'Documents and Settings',
+  'inetpub', 'Quarantine', 'SWSetup'
 )
 
 # ===== 確認モード（-Check）: クリーンアップ済みかを確認する（read-only）=====
