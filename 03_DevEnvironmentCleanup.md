@@ -7,8 +7,8 @@
 
 | | クリーンアップ内容 |
 |---|---|
-| **WSL側** | Claude Code 認証解除 ／ GitHub CLI 認証解除（下流工程研修のみ）／ Claude Code 履歴削除 ／ git・bash の個人痕跡削除 ／ 研修資料削除 ／ VSCode の標準外拡張機能の確認・削除 |
-| **Windows側** | ブラウザ（Chrome・Edge）の Cookie・閲覧履歴・ブックマーク・タブ/セッション削除 ／ メモ帳の未保存タブ削除 ／ Zoom のログイン情報削除 ／ ダウンロードフォルダの全削除 ／ ピクチャのスクリーンショット削除 ／ ごみ箱を空にする |
+| **WSL側** | Claude Code 認証解除 ／ GitHub CLI 認証解除（下流工程研修のみ）／ Claude Code 履歴削除 ／ git・bash の個人痕跡削除 ／ 研修資料の一括削除（ホーム直下の `setup.sh`・`cleanup.sh` 以外）／ 見慣れない隠し項目の参考表示 ／ VSCode の標準外拡張機能の確認・削除 |
+| **Windows側** | ブラウザ（Chrome・Edge）の Cookie・閲覧履歴・ブックマーク・タブ/セッション削除 ／ メモ帳の未保存タブ削除 ／ Zoom のログイン情報削除 ／ ダウンロードフォルダの全削除 ／ ピクチャのスクリーンショット削除 ／ エクスプローラー履歴（最近使ったファイル・クイックアクセス・検索/アドレスバー）削除 ／ C:\ 直下の非標準フォルダの確認・削除 ／ ごみ箱を空にする |
 
 > **残すもの:** WSL/Ubuntu 本体、VSCode、`gh`・`claude`・JDK・Maven などのツール類と環境変数は削除しません（環境は変更しません）。
 
@@ -45,7 +45,7 @@ curl -fsSL https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/c
 bash cleanup.sh
 ```
 
-確認に `y` で答えると認証解除・履歴削除が進み、最後にホーム直下の一覧（隠しファイル除く）が表示される。削除する研修資料の名前（ファイル/フォルダ可）を入力する。複数あれば繰り返し入力でき、**無ければ／削除し終えたら空欄のまま Enter** で終了する。続いて、標準セット外の VSCode 拡張があれば一覧表示されるので、`y` でまとめてアンインストールできる。
+確認に `y` で答えると認証解除・履歴削除が進み、**研修資料の削除**では、ホーム直下の項目のうち `setup.sh`・`cleanup.sh` **以外**の非隠し項目が削除対象として一覧表示される。`y` で答えると**まとめて削除**する（1つずつ名前を入力する必要はない）。あわせて、標準の開発環境ファイル以外の**見慣れない隠し項目**があれば参考として一覧表示される（こちらは自動削除しないので、中身を確認して不要なら手動で削除する）。続いて、標準セット外の VSCode 拡張があれば一覧表示されるので、`y` でまとめてアンインストールできる。
 
 削除が終わると、続けて**確認（点検）が自動で実行される**ので、別途コマンドを打つ必要はない。
 
@@ -153,7 +153,11 @@ Invoke-WebRequest -Uri https://raw.githubusercontent.com/katyoid57/file-share/ma
 powershell -ExecutionPolicy Bypass -File "$env:TEMP\cleanup.ps1"
 ```
 
-実行中、`y` の入力を2回求められる（「開始」と「ダウンロードフォルダ削除」）。いずれも `y` で進めると、概要の表の内容（ブラウザ・メモ帳・Zoom の終了とデータ削除、ダウンロード／スクリーンショット削除、ごみ箱の空化）が実行され、続けて**確認（点検）が自動で実行される**。
+実行すると `y` の入力を求められる（「開始」「ダウンロードフォルダ削除」、および **C:\ 直下に非標準フォルダがあればフォルダごとに1件ずつ**）。`y` で進めると、概要の表の内容（ブラウザ・メモ帳・Zoom の終了とデータ削除、ダウンロード／スクリーンショット削除、エクスプローラー履歴削除、C:\ 直下の非標準フォルダ削除、ごみ箱の空化）が実行され、続けて**確認（点検）が自動で実行される**。
+
+> **C:\ 直下の非標準フォルダ:** 標準フォルダ（Windows／Program Files／Users 等）以外が `C:\` 直下にあれば、研修生が作成した可能性があるものとして**1件ずつ名前を確認して** `y/N` で削除できる。確認（`-Check`）では削除せず `[情報]` として列挙するだけ。
+> ※ `C:\` 直下のフォルダ削除は**管理者権限が必要**な場合がある。「削除に失敗しました」と出たら、PowerShell を**管理者として実行**して再度クリーンアップを実行する。
+> **エクスプローラー履歴:** 最近使ったファイル・クイックアクセス・検索/アドレスバー入力履歴を削除する。エクスプローラーが掴んでいて消えない項目があれば、サインアウト/再起動後にもう一度実行すると確実。
 
 > **補足:** 後から点検し直したい場合は `powershell -ExecutionPolicy Bypass -File "$env:TEMP\cleanup.ps1" -Check`（read-only。何度でも安全）。
 
@@ -242,14 +246,43 @@ $shots = Join-Path ([Environment]::GetFolderPath('MyPictures')) 'Screenshots'
 if (Test-Path $shots) { Get-ChildItem $shots -Force | Where-Object { $_.Name -ne 'desktop.ini' } | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue }
 ```
 
-##### B-7. ごみ箱を空にする
+##### B-7. エクスプローラーの履歴削除
+
+```powershell
+# 最近使ったファイル・クイックアクセス（ジャンプリスト）の中身を削除
+$recent = "$env:APPDATA\Microsoft\Windows\Recent"
+foreach ($sub in @('', 'AutomaticDestinations', 'CustomDestinations')) {
+  $p = if ($sub) { Join-Path $recent $sub } else { $recent }
+  if (Test-Path $p) { Get-ChildItem $p -File -Force -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue }
+}
+# 検索履歴（WordWheelQuery）・アドレスバー入力履歴（TypedPaths）を削除
+Remove-Item 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\WordWheelQuery' -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\TypedPaths' -Recurse -Force -ErrorAction SilentlyContinue
+```
+
+##### B-8. C:\ 直下の非標準フォルダの確認・削除
+
+```powershell
+# C:\ 直下の標準以外のフォルダを列挙（研修生が作成した可能性）
+$std = @('Windows','Program Files','Program Files (x86)','ProgramData','Users','PerfLogs',
+         'Recovery','$Recycle.Bin','System Volume Information','$WinREAgent','$SysReset',
+         'OneDriveTemp','Intel','Drivers','AMD','NVIDIA','Config.Msi','Documents and Settings')
+Get-ChildItem 'C:\' -Directory -Force -ErrorAction SilentlyContinue | Where-Object { $std -notcontains $_.Name } | ForEach-Object { "C:\$($_.Name)" }
+```
+
+```powershell
+# 上で出た不要フォルダを削除（<名前> を実際の名前に置き換える。管理者権限が必要な場合あり）
+Remove-Item "C:\<名前>" -Recurse -Force
+```
+
+##### B-9. ごみ箱を空にする
 
 ```powershell
 # ごみ箱を空にする
 Clear-RecycleBin -Force
 ```
 
-##### B-8. 点検（手動）
+##### B-10. 点検（手動）
 
 削除後、こちらで点検する（各項目に OK/NG が表示される）。
 
@@ -264,4 +297,11 @@ if (Test-Path "$env:APPDATA\Zoom\data") { Write-Host "NG: Zoom ログイン情�
 foreach ($p in @("$env:LOCALAPPDATA\Google\Chrome\User Data\Default\History", "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\History")) {
   if (Test-Path $p) { Write-Host "NG: ブラウザ履歴 残存 ($p)" } else { Write-Host "OK: ブラウザ履歴なし ($p)" }
 }
+$rc = (Get-ChildItem "$env:APPDATA\Microsoft\Windows\Recent" -File -Force -ErrorAction SilentlyContinue | Measure-Object).Count
+if ($rc -eq 0) { Write-Host "OK: エクスプローラー最近使ったファイル なし" } else { Write-Host "NG: エクスプローラー履歴 $rc 件残存" }
+$std = @('Windows','Program Files','Program Files (x86)','ProgramData','Users','PerfLogs',
+         'Recovery','$Recycle.Bin','System Volume Information','$WinREAgent','$SysReset',
+         'OneDriveTemp','Intel','Drivers','AMD','NVIDIA','Config.Msi','Documents and Settings')
+$extra = Get-ChildItem 'C:\' -Directory -Force -ErrorAction SilentlyContinue | Where-Object { $std -notcontains $_.Name }
+if (-not $extra) { Write-Host "OK: C:\ 直下 非標準フォルダなし" } else { $extra | ForEach-Object { Write-Host "NG: C:\ 直下 非標準フォルダ残存 (C:\$($_.Name))" } }
 ```

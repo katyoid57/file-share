@@ -7,6 +7,42 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
 
+# ホーム（~）直下で「消さずに残す」非隠し項目（このクリーンアップ用スクリプト自身）。
+# 研修資料は ~/ 直下にバラけてコピーされるため、これ以外の非隠し項目はまとめて削除する。
+KEEP_ITEMS="setup.sh cleanup.sh"
+
+# ホーム（~）直下の「標準」隠し項目（開発環境の正規 dotfile／専用手順で消す認証系）。
+# これ以外の隠し項目は「見慣れない隠し項目」として一覧表示だけする（自動削除はしない。
+# 正規の dotfile を誤って消すと環境が壊れるため、削除は目視判断のうえ手動で行う）。
+KNOWN_DOTFILES=".bashrc .bash_logout .bash_profile .profile .bash_history .config .cache
+.local .vscode-server .vscode-remote-containers .gitconfig .claude .claude.json
+.claude.json.backup .ssh .npm .java .m2 .sdkman .gradle .gnupg .docker .wget-hsts
+.lesshst .sudo_as_admin_successful .motd_shown .landscape .python_history .viminfo .netrc"
+
+# $1 が $2 以降のリスト（空白区切り。要素に空白は含まない前提）に完全一致で含まれるか。
+# 含まれれば 0、含まれなければ 1 を返す。
+in_list() {
+  local needle="$1"; shift
+  local x
+  for x in $@; do [ "$x" = "$needle" ] && return 0; done
+  return 1
+}
+
+# ホーム（~）直下の隠し項目のうち、KNOWN_DOTFILES に無いものを配列 EXTRA_HIDDEN に格納する。
+list_extra_hidden() {
+  EXTRA_HIDDEN=()
+  local item name
+  shopt -s nullglob dotglob
+  local items=("$HOME"/.*)
+  shopt -u nullglob dotglob
+  for item in "${items[@]}"; do
+    name="$(basename "$item")"
+    { [ "$name" = "." ] || [ "$name" = ".." ]; } && continue
+    in_list "$name" $KNOWN_DOTFILES && continue
+    EXTRA_HIDDEN+=("$name")
+  done
+}
+
 # 標準セット外の VSCode 拡張を検出し、グローバル配列 EXTRA に格納する。
 # セットアップでインストールする標準拡張の発行元（publisher）で判定する。
 # 拡張パック（Java/Spring）は子拡張を多数導入するため、ID 個別ではなく発行元で判定する。
@@ -80,19 +116,30 @@ run_check() {
     echo -e "${GREEN}[--]${NC} 研修資料: クリーンアップ手順で削除（上の一覧に残っていなければ完了）"
   else
     # 研修資料は ~/ 直下にファイル・フォルダがバラけてコピーされる場合があるため、
-    # フォルダだけでなく隠しファイルを除く全項目を表示する
-    echo "現在ホーム（~）にあるファイル・フォルダ（隠しファイルを除く）:"
+    # 隠しファイルを除く全項目を表示する（$KEEP_ITEMS は残す想定なので除外して表示）
+    echo "現在ホーム（~）にある研修資料の可能性がある項目（隠しファイル・$KEEP_ITEMS を除く）:"
     shopt -s nullglob
     HOME_ITEMS=("$HOME"/*)
     shopt -u nullglob
-    if [ ${#HOME_ITEMS[@]} -gt 0 ]; then
-      for item in "${HOME_ITEMS[@]}"; do
-        if [ -d "$item" ]; then echo "  - $(basename "$item")/"; else echo "  - $(basename "$item")"; fi
-      done
-    else
-      echo "  （ありません）"
-    fi
+    _shown=0
+    for item in "${HOME_ITEMS[@]}"; do
+      name="$(basename "$item")"
+      in_list "$name" $KEEP_ITEMS && continue
+      if [ -d "$item" ]; then echo "  - $name/"; else echo "  - $name"; fi
+      _shown=1
+    done
+    [ "$_shown" -eq 0 ] && echo "  （ありません）"
     echo -e "${GREEN}[--]${NC} 研修資料: 上記一覧に研修資料が無ければ削除済み"
+
+    # 見慣れない隠し項目（標準 dotfile 以外）を参考表示する（自動削除はしない）
+    echo ""
+    list_extra_hidden
+    if [ ${#EXTRA_HIDDEN[@]} -eq 0 ]; then
+      echo -e "${GREEN}[--]${NC} 隠し項目: 標準以外の隠し項目はありません"
+    else
+      echo -e "${GREEN}[--]${NC} 見慣れない隠し項目（研修生が作成した可能性。中身を確認し不要なら手動削除）:"
+      for name in "${EXTRA_HIDDEN[@]}"; do echo "    - $name"; done
+    fi
   fi
 
   # VSCode 拡張機能の確認（研修生が追加した標準セット外の拡張を検出。read-only。削除はしない）
@@ -181,46 +228,54 @@ run_cleanup() {
   echo "bash 履歴をクリアしました（~/.bash_history）。"
 
   # 5. 研修資料の削除
-  # 研修資料は ~/ 直下に複数のファイル・フォルダとしてバラけてコピーされる場合があるため、
-  # 一覧表示 → 入力 → 削除 を繰り返し、空欄 Enter で終了する
+  # 研修資料は ~/ 直下に複数のファイル・フォルダとしてバラけてコピーされるため、
+  # $KEEP_ITEMS（setup.sh・cleanup.sh）以外の非隠し項目を一覧表示 → まとめて削除する。
   echo ""
   CURRENT_STEP="研修資料の削除"
   echo "=== $CURRENT_STEP ==="
-  echo "（研修資料が複数のファイル・フォルダに分かれている場合は、続けて入力できます）"
-  while true; do
+  echo "ホーム（~）直下の非隠し項目のうち、$KEEP_ITEMS 以外をまとめて削除します。"
+
+  shopt -s nullglob
+  HOME_ITEMS=("$HOME"/*)
+  shopt -u nullglob
+  DEL_ITEMS=()
+  for item in "${HOME_ITEMS[@]}"; do
+    name="$(basename "$item")"
+    in_list "$name" $KEEP_ITEMS && continue
+    DEL_ITEMS+=("$item")
+  done
+
+  if [ ${#DEL_ITEMS[@]} -eq 0 ]; then
+    echo "→ 削除対象（研修資料）はありません。"
+  else
     echo ""
-    echo "現在ホーム（~）にあるファイル・フォルダ（隠しファイルを除く）:"
-    shopt -s nullglob
-    HOME_ITEMS=("$HOME"/*)
-    shopt -u nullglob
-    if [ ${#HOME_ITEMS[@]} -gt 0 ]; then
-      for item in "${HOME_ITEMS[@]}"; do
-        if [ -d "$item" ]; then echo "  - $(basename "$item")/"; else echo "  - $(basename "$item")"; fi
+    echo "以下の ${#DEL_ITEMS[@]} 項目を削除します（$KEEP_ITEMS は残します）:"
+    for item in "${DEL_ITEMS[@]}"; do
+      if [ -d "$item" ]; then echo "  - $(basename "$item")/"; else echo "  - $(basename "$item")"; fi
+    done
+    echo ""
+    read -p "これらをすべて削除しますか？ [y/N]: " DEL_CONFIRM
+    if [ "$DEL_CONFIRM" = "y" ] || [ "$DEL_CONFIRM" = "Y" ]; then
+      for item in "${DEL_ITEMS[@]}"; do
+        rm -rf "$item"
+        echo "  削除しました: $(basename "$item")"
       done
     else
-      echo "  （ありません）"
+      echo "→ 削除をスキップしました。"
     fi
-    echo ""
-    read -p "削除する研修資料の名前を入力してください（ファイル/フォルダ可。終了/不要なら空欄のまま Enter）: " FOLDER_NAME
+  fi
 
-    if [ -z "$FOLDER_NAME" ]; then
-      echo "→ 研修資料の削除を終了します。"
-      break
-    fi
-
-    TARGET="$HOME/$FOLDER_NAME"
-    if [ -e "$TARGET" ]; then
-      read -p "「$TARGET」を削除しますか？ [y/N]: " CONFIRM
-      if [ "$CONFIRM" = "y" ] || [ "$CONFIRM" = "Y" ]; then
-        rm -rf "$TARGET"
-        echo "削除しました: $TARGET"
-      else
-        echo "削除をスキップしました。"
-      fi
-    else
-      echo "見つかりません（既に削除済みの可能性）: $TARGET"
-    fi
-  done
+  # 5b. 見慣れない隠し項目の参考表示（自動削除はしない。目視で判断して手動削除する）
+  #     ホーム直下の dotfile は大半が開発環境の正規ファイルのため、スクリプトでは消さない。
+  echo ""
+  echo "--- 参考: 見慣れない隠し項目（自動削除はしません）---"
+  list_extra_hidden
+  if [ ${#EXTRA_HIDDEN[@]} -eq 0 ]; then
+    echo "  標準以外の隠し項目は見つかりませんでした。"
+  else
+    echo "  標準の開発環境ファイル以外の隠し項目です。研修生が作成した不要物なら、中身を確認のうえ手動で削除してください（例: rm -rf ~/名前）:"
+    for name in "${EXTRA_HIDDEN[@]}"; do echo "    - $name"; done
+  fi
 
   # 6. VSCode 標準セット外拡張の削除（研修生が追加した拡張。発行元で判定し、一覧→確認→ループ削除）
   echo ""

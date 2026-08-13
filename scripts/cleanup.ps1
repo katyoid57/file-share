@@ -2,10 +2,20 @@
 # 実行: powershell -ExecutionPolicy Bypass -File .\cleanup.ps1          … クリーンアップ（削除）を行い、完了後に確認（-Check 相当）も自動実行する
 # 確認: powershell -ExecutionPolicy Bypass -File .\cleanup.ps1 -Check   … 確認のみ（read-only。何度でも安全に実行可）
 #   ブラウザ(Chrome/Edge)のCookie・履歴・ブックマーク・タブ削除、メモ帳の未保存タブ削除、Zoom のログイン情報削除、
-#   ダウンロードフォルダの全削除、ピクチャのスクリーンショット削除、ごみ箱を空にする。
+#   ダウンロードフォルダの全削除、ピクチャのスクリーンショット削除、エクスプローラーの履歴削除、
+#   C:\ 直下の非標準フォルダの確認・削除、ごみ箱を空にする。
 param([switch]$Check)
 
 $ErrorActionPreference = 'Continue'
+
+# C:\ 直下に標準で存在するフォルダ。これ以外を「研修生が作成した可能性がある非標準フォルダ」として
+# 検知する（-Check では列挙のみ、実行時は 1 件ずつ確認して削除する）。
+# ※ $ を含む名前はシングルクォートで囲みリテラル扱いにする。
+$StandardRootDirs = @(
+  'Windows', 'Program Files', 'Program Files (x86)', 'ProgramData', 'Users', 'PerfLogs',
+  'Recovery', '$Recycle.Bin', 'System Volume Information', '$WinREAgent', '$SysReset',
+  'OneDriveTemp', 'Intel', 'Drivers', 'AMD', 'NVIDIA', 'Config.Msi', 'Documents and Settings'
+)
 
 # ===== 確認モード（-Check）: クリーンアップ済みかを確認する（read-only）=====
 function Invoke-Check {
@@ -73,6 +83,35 @@ function Invoke-Check {
     }
   } else {
     Write-Host "[--] Zoom: 利用されていません（未ログインまたは未インストール）" -ForegroundColor Yellow
+  }
+
+  # エクスプローラー履歴の確認（最近使ったファイル・クイックアクセス・検索/アドレスバー履歴）
+  $recent = "$env:APPDATA\Microsoft\Windows\Recent"
+  $recentCount = 0
+  foreach ($sub in @('', 'AutomaticDestinations', 'CustomDestinations')) {
+    $p = if ($sub) { Join-Path $recent $sub } else { $recent }
+    if (Test-Path $p) {
+      $recentCount += (Get-ChildItem -Path $p -File -Force -ErrorAction SilentlyContinue | Measure-Object).Count
+    }
+  }
+  $ww = Get-Item 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\WordWheelQuery' -ErrorAction SilentlyContinue
+  $tp = Get-Item 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\TypedPaths' -ErrorAction SilentlyContinue
+  $wwCount = if ($ww) { ($ww.Property | Measure-Object).Count } else { 0 }
+  $tpCount = if ($tp) { ($tp.Property | Measure-Object).Count } else { 0 }
+  if ($recentCount -eq 0 -and $wwCount -eq 0 -and $tpCount -eq 0) {
+    Write-Host "[OK] エクスプローラー履歴: 最近使ったファイル・検索/アドレスバー履歴なし" -ForegroundColor Green
+  } else {
+    Write-Host "[NG] エクスプローラー履歴: 残っています（最近使った $recentCount 件 / 検索 $wwCount 件 / アドレス $tpCount 件）" -ForegroundColor Red
+  }
+
+  # C:\ 直下の非標準フォルダの確認（研修生が C:\ 直下に作成した可能性。参考表示のみ。削除はしない）
+  Write-Host ""
+  Write-Host "[情報] C:\ 直下の標準以外のフォルダ（研修生が作成した可能性。あればクリーンアップ実行で 1 件ずつ削除できます）:" -ForegroundColor Yellow
+  $rootDirs = Get-ChildItem -Path 'C:\' -Directory -Force -ErrorAction SilentlyContinue | Where-Object { $StandardRootDirs -notcontains $_.Name }
+  if ($rootDirs) {
+    $rootDirs | ForEach-Object { Write-Host "       - C:\$($_.Name)" }
+  } else {
+    Write-Host "       （ありません）"
   }
 
   # デスクトップ / ドキュメント / ピクチャ のファイル・フォルダ一覧（参考表示のみ。判定はしない。
@@ -194,7 +233,49 @@ function Invoke-Cleanup {
     Write-Host "  スキップ: スクリーンショットフォルダはありません（保存されていません）。"
   }
 
-  # 7. ごみ箱を空にする
+  # 7. エクスプローラーの履歴を削除する（最近使ったファイル・クイックアクセス・検索/アドレスバー履歴）
+  Write-Host ""
+  Write-Host "=== エクスプローラーの履歴を削除します ===" -ForegroundColor Cyan
+  $recent = "$env:APPDATA\Microsoft\Windows\Recent"
+  # Recent 直下の *.lnk（最近使ったファイル）と、クイックアクセスのジャンプリスト
+  # （AutomaticDestinations／CustomDestinations）の中身を削除する。フォルダ自体は残す。
+  foreach ($sub in @('', 'AutomaticDestinations', 'CustomDestinations')) {
+    $p = if ($sub) { Join-Path $recent $sub } else { $recent }
+    if (Test-Path $p) {
+      Get-ChildItem -Path $p -File -Force -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+    }
+  }
+  # 検索履歴（WordWheelQuery）・アドレスバー入力履歴（TypedPaths）をレジストリから削除する
+  Remove-Item 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\WordWheelQuery' -Recurse -Force -ErrorAction SilentlyContinue
+  Remove-Item 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\TypedPaths' -Recurse -Force -ErrorAction SilentlyContinue
+  Write-Host "  最近使ったファイル・クイックアクセス・検索/アドレスバー履歴を削除しました。"
+  Write-Host "  ※ エクスプローラーが掴んでいて消えない項目は、サインアウト/再起動後にもう一度実行すると確実です。"
+
+  # 8. C:\ 直下の非標準フォルダを検知して削除する（研修生が C:\ 直下に作成した可能性。1 件ずつ確認）
+  Write-Host ""
+  Write-Host "=== C:\ 直下の非標準フォルダを確認します ===" -ForegroundColor Cyan
+  $rootDirs = Get-ChildItem -Path 'C:\' -Directory -Force -ErrorAction SilentlyContinue | Where-Object { $StandardRootDirs -notcontains $_.Name }
+  if (-not $rootDirs) {
+    Write-Host "  C:\ 直下に非標準フォルダはありません。"
+  } else {
+    Write-Host "  C:\ 直下に標準以外のフォルダが見つかりました（研修生が作成した可能性）:"
+    $rootDirs | ForEach-Object { Write-Host "    - C:\$($_.Name)" }
+    foreach ($d in $rootDirs) {
+      $confirm = Read-Host "「C:\$($d.Name)」を削除しますか？ [y/N]"
+      if ($confirm -eq 'y' -or $confirm -eq 'Y') {
+        Remove-Item -LiteralPath $d.FullName -Recurse -Force -ErrorAction SilentlyContinue
+        if (Test-Path -LiteralPath $d.FullName) {
+          Write-Host "    削除に失敗しました（権限不足の可能性。管理者権限の PowerShell で再実行してください）: C:\$($d.Name)" -ForegroundColor Red
+        } else {
+          Write-Host "    削除しました: C:\$($d.Name)"
+        }
+      } else {
+        Write-Host "    スキップしました: C:\$($d.Name)"
+      }
+    }
+  }
+
+  # 9. ごみ箱を空にする
   Write-Host ""
   Write-Host "=== ごみ箱を空にします ===" -ForegroundColor Cyan
   Clear-RecycleBin -Force -ErrorAction SilentlyContinue
