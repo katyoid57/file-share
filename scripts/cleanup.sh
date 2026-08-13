@@ -17,8 +17,8 @@ KEEP_ITEMS="setup.sh cleanup.sh"
 KNOWN_DOTFILES=".bashrc .bash_logout .bash_profile .profile .bash_history .config .cache
 .local .vscode .vscode-server .vscode-remote-containers .gitconfig .claude .claude.json
 .claude.json.backup .ssh .npm .java .m2 .mvn .dotnet .sdkman .gradle .gnupg .docker
-.wget-hsts .lesshst .sudo_as_admin_successful .motd_shown .landscape .python_history
-.viminfo .netrc"
+.sts4 .wget-hsts .lesshst .sudo_as_admin_successful .motd_shown .landscape
+.python_history .viminfo .netrc"
 
 # $1 が $2 以降のリスト（空白区切り。要素に空白は含まない前提）に完全一致で含まれるか。
 # 含まれれば 0、含まれなければ 1 を返す。
