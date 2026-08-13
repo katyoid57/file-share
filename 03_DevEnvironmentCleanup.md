@@ -157,7 +157,7 @@ powershell -ExecutionPolicy Bypass -File "$env:TEMP\cleanup.ps1"
 
 > **C:\ 直下の非標準フォルダ:** 標準フォルダ（Windows／Program Files／Users 等）以外が `C:\` 直下にあれば、研修生が作成した可能性があるものとして**1件ずつ名前を確認して** `y/N` で削除できる。確認（`-Check`）では削除せず `[情報]` として列挙するだけ。
 > ※ `C:\` 直下のフォルダ削除は**管理者権限が必要**な場合がある。「削除に失敗しました」と出たら、PowerShell を**管理者として実行**して再度クリーンアップを実行する。
-> **エクスプローラー履歴:** 最近使ったファイル・クイックアクセス・検索/アドレスバー入力履歴を削除する。エクスプローラーが掴んでいて消えない項目があれば、サインアウト/再起動後にもう一度実行すると確実。
+> **エクスプローラー履歴:** 最近使ったファイル・クイックアクセス・検索/アドレスバー入力履歴を削除する。履歴ファイルはエクスプローラーがロックしているため、**スクリプトが自動でエクスプローラーを一旦終了してから削除する**（タスクバー/デスクトップが数秒消えるが、Windows が自動で復帰させる。戻らない場合はサインアウト/再起動）。
 
 > **補足:** 後から点検し直したい場合は `powershell -ExecutionPolicy Bypass -File "$env:TEMP\cleanup.ps1" -Check`（read-only。何度でも安全）。
 
@@ -249,6 +249,11 @@ if (Test-Path $shots) { Get-ChildItem $shots -Force | Where-Object { $_.Name -ne
 ##### B-7. エクスプローラーの履歴削除
 
 ```powershell
+# 履歴ファイルはエクスプローラーがロックするため、先にエクスプローラーを終了する
+# （タスクバー/デスクトップが数秒消えるが、Windows が自動で復帰させる）
+Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
+Start-Sleep -Seconds 2
+
 # 最近使ったファイル・クイックアクセス（ジャンプリスト）の中身を削除
 $recent = "$env:APPDATA\Microsoft\Windows\Recent"
 foreach ($sub in @('', 'AutomaticDestinations', 'CustomDestinations')) {
@@ -258,6 +263,7 @@ foreach ($sub in @('', 'AutomaticDestinations', 'CustomDestinations')) {
 # 検索履歴（WordWheelQuery）・アドレスバー入力履歴（TypedPaths）を削除
 Remove-Item 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\WordWheelQuery' -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\TypedPaths' -Recurse -Force -ErrorAction SilentlyContinue
+# ※ エクスプローラー（タスクバー/デスクトップ）は Windows が数秒で自動復帰する（戻らなければサインアウト/再起動）
 ```
 
 ##### B-8. C:\ 直下の非標準フォルダの確認・削除

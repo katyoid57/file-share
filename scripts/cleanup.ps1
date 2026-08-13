@@ -235,8 +235,15 @@ function Invoke-Cleanup {
   }
 
   # 7. エクスプローラーの履歴を削除する（最近使ったファイル・クイックアクセス・検索/アドレスバー履歴）
+  #    履歴ファイル（ジャンプリスト等）はエクスプローラー（シェル）が掴んでロックし、
+  #    起動中は削除が失敗したり終了時に履歴を書き戻したりするため、
+  #    先にエクスプローラーを終了 → 削除 → 起動し直す、の順で行う。
   Write-Host ""
   Write-Host "=== エクスプローラーの履歴を削除します ===" -ForegroundColor Cyan
+  Write-Host "  エクスプローラーを一旦終了します（タスクバー/デスクトップが数秒消えますが、自動で戻ります）..."
+  Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
+  Start-Sleep -Seconds 2
+
   $recent = "$env:APPDATA\Microsoft\Windows\Recent"
   # Recent 直下の *.lnk（最近使ったファイル）と、クイックアクセスのジャンプリスト
   # （AutomaticDestinations／CustomDestinations）の中身を削除する。フォルダ自体は残す。
@@ -247,10 +254,13 @@ function Invoke-Cleanup {
     }
   }
   # 検索履歴（WordWheelQuery）・アドレスバー入力履歴（TypedPaths）をレジストリから削除する
+  # （エクスプローラー終了中に消すことで、終了時の書き戻しを防ぐ）
   Remove-Item 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\WordWheelQuery' -Recurse -Force -ErrorAction SilentlyContinue
   Remove-Item 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\TypedPaths' -Recurse -Force -ErrorAction SilentlyContinue
+
+  # ※ エクスプローラー（シェル）は明示的には起動し直さない。Windows が自動で復帰させる。
   Write-Host "  最近使ったファイル・クイックアクセス・検索/アドレスバー履歴を削除しました。"
-  Write-Host "  ※ エクスプローラーが掴んでいて消えない項目は、サインアウト/再起動後にもう一度実行すると確実です。"
+  Write-Host "  ※ タスクバー/デスクトップは Windows が数秒で自動復帰します（戻らない場合はサインアウト/再起動）。"
 
   # 8. C:\ 直下の非標準フォルダを検知して削除する（研修生が C:\ 直下に作成した可能性。1 件ずつ確認）
   Write-Host ""
