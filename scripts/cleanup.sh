@@ -15,9 +15,10 @@ KEEP_ITEMS="setup.sh cleanup.sh"
 # これ以外の隠し項目は「見慣れない隠し項目」として一覧表示だけする（自動削除はしない。
 # 正規の dotfile を誤って消すと環境が壊れるため、削除は目視判断のうえ手動で行う）。
 KNOWN_DOTFILES=".bashrc .bash_logout .bash_profile .profile .bash_history .config .cache
-.local .vscode-server .vscode-remote-containers .gitconfig .claude .claude.json
-.claude.json.backup .ssh .npm .java .m2 .sdkman .gradle .gnupg .docker .wget-hsts
-.lesshst .sudo_as_admin_successful .motd_shown .landscape .python_history .viminfo .netrc"
+.local .vscode .vscode-server .vscode-remote-containers .gitconfig .claude .claude.json
+.claude.json.backup .ssh .npm .java .m2 .mvn .dotnet .sdkman .gradle .gnupg .docker
+.wget-hsts .lesshst .sudo_as_admin_successful .motd_shown .landscape .python_history
+.viminfo .netrc"
 
 # $1 が $2 以降のリスト（空白区切り。要素に空白は含まない前提）に完全一致で含まれるか。
 # 含まれれば 0、含まれなければ 1 を返す。
