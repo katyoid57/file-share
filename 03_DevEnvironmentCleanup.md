@@ -8,7 +8,7 @@
 | | クリーンアップ内容 |
 |---|---|
 | **WSL側** | Claude Code 認証解除 ／ GitHub CLI 認証解除（下流工程研修のみ）／ Claude Code 履歴削除 ／ git・bash の個人痕跡削除 ／ 研修資料の一括削除（ホーム直下の `setup.sh`・`cleanup.sh` 以外）／ 見慣れない隠し項目の参考表示 ／ VSCode の標準外拡張機能の確認・削除 |
-| **Windows側** | ブラウザ（Chrome・Edge）の Cookie・閲覧履歴・ブックマーク・タブ/セッション削除 ／ メモ帳の未保存タブ削除 ／ Zoom のログイン情報削除 ／ ダウンロードフォルダの全削除 ／ ピクチャのスクリーンショット削除 ／ エクスプローラー履歴（最近使ったファイル・クイックアクセス・検索/アドレスバー）削除 ／ C:\ 直下の非標準フォルダの確認・削除 ／ ごみ箱を空にする |
+| **Windows側** | ブラウザ（Chrome・Edge）の Cookie・閲覧履歴・ブックマーク・タブ/セッション削除 ／ メモ帳の未保存タブ削除 ／ Zoom のログイン情報削除 ／ **Teams・Outlook のログイン情報削除（新しい版・従来版の両方）** ／ **Office のサインイン解除** ／ **Windows 資格情報・「職場または学校アカウント」の削除** ／ ダウンロードフォルダの全削除 ／ ピクチャのスクリーンショット削除 ／ エクスプローラー履歴（最近使ったファイル・クイックアクセス・検索/アドレスバー）削除 ／ C:\ 直下の非標準フォルダの確認・削除 ／ ごみ箱を空にする |
 
 > **残すもの:** WSL/Ubuntu 本体、VSCode、`gh`・`claude`・JDK・Maven などのツール類と環境変数は削除しません（環境は変更しません）。
 
@@ -16,12 +16,18 @@
 
 ## クリーンアップ
 
-### 1. ブラウザ・Zoom の手動ログアウト
+### 1. ブラウザ・Zoom・Teams・Outlook の手動ログアウト
 
 スクリプトでローカルの認証データを消す前に、各サービスでログアウトしておくとサーバー側セッションも無効化されます。
 
 1. ブラウザで https://claude.ai を開き、左下のユーザーアイコン → **「Log out」**
 2. Zoom デスクトップアプリを起動し、右上のプロフィールアイコン → **「サインアウト」**
+3. Teams を起動し、右上のプロフィールアイコン → **「サインアウト」**
+4. Outlook を起動し、アカウント設定から使用中のアカウントを**削除**する
+   - 新しい Outlook: 右上の **設定（歯車）** → **アカウント** → 該当アカウント → **管理** → **削除**
+   - 従来版 Outlook: **ファイル** → **アカウント設定** → **アカウント設定** → 該当アカウント → **削除**
+
+> Teams・Outlook を使っていなければ 3・4 は不要です。使ったかどうか分からない場合は、先にクリーンアップスクリプトの確認（`-Check`）を実行するとログイン情報の有無が分かります。
 
 ---
 
@@ -153,11 +159,21 @@ Invoke-WebRequest -Uri https://raw.githubusercontent.com/katyoid57/file-share/ma
 powershell -ExecutionPolicy Bypass -File "$env:TEMP\cleanup.ps1"
 ```
 
-実行すると `y` の入力を求められる（「開始」「ダウンロードフォルダ削除」、および **C:\ 直下に非標準フォルダがあればフォルダごとに1件ずつ**）。`y` で進めると、概要の表の内容（ブラウザ・メモ帳・Zoom の終了とデータ削除、ダウンロード／スクリーンショット削除、エクスプローラー履歴削除、C:\ 直下の非標準フォルダ削除、ごみ箱の空化）が実行され、続けて**確認（点検）が自動で実行される**。
+実行すると `y` の入力を求められる（「開始」「ダウンロードフォルダ削除」、および **C:\ 直下に非標準フォルダがあればフォルダごとに1件ずつ**）。`y` で進めると、概要の表の内容（ブラウザ・メモ帳・Zoom・Teams・Outlook の終了とデータ削除、Office のサインイン解除、Windows 資格情報・職場アカウントの削除、ダウンロード／スクリーンショット削除、エクスプローラー履歴削除、C:\ 直下の非標準フォルダ削除、ごみ箱の空化）が実行され、続けて**確認（点検）が自動で実行される**。
 
 > **C:\ 直下の非標準フォルダ:** 標準フォルダ（Windows／Program Files／Users 等）以外が `C:\` 直下にあれば、研修生が作成した可能性があるものとして**1件ずつ名前を確認して** `y/N` で削除できる。確認（`-Check`）では削除せず `[情報]` として列挙するだけ。
 > ※ `C:\` 直下のフォルダ削除は**管理者権限が必要**な場合がある。「削除に失敗しました」と出たら、PowerShell を**管理者として実行**して再度クリーンアップを実行する。
 > **エクスプローラー履歴:** 最近使ったファイル・クイックアクセス・検索/アドレスバー入力履歴を削除する。履歴ファイルはエクスプローラーがロックしているため、**スクリプトが自動でエクスプローラーを一旦終了してから削除する**（タスクバー/デスクトップが数秒消えるが、Windows が自動で復帰させる。戻らない場合はサインアウト/再起動）。
+
+> **Teams・Outlook:** 「新しい Teams / 新しい Outlook」（Windows アプリ版）と「従来版」でログイン情報の置き場所が違うため、**両方を対象に削除する**（インストールされていない方は自動でスキップされる）。従来版 Outlook では、アカウント設定（レジストリのプロファイル）と受信メールのキャッシュ（`.ost`）・署名もあわせて削除される。削除後は次回起動時にサインイン画面から始まる。
+> ※ アプリが起動中だとファイルがロックされて削除できないため、スクリプトが**自動で Teams・Outlook を終了してから**削除する。「削除に失敗しました」と出た場合は、アプリを閉じてから再実行する。
+
+> **Windows 資格情報・職場または学校アカウント:** アプリのデータを消しても、Windows 側にアカウントとトークンが残っていると次回起動時に**再入力なしでサインインできてしまう**ため、Teams/Outlook/Office 関連の資格情報と、サインイン中ユーザーの職場アカウント情報も削除する。
+> ※ 削除されるのは**サインイン中ユーザーのトークンキャッシュ**だけで、PC 自体のドメイン参加・Azure AD 参加は解除されない。
+> ※ 削除後も設定アプリの一覧に表示が残る場合は、**設定 → アカウント → メールとアカウント** から該当アカウントを「切断」する。
+
+> **Office のサインイン:** Word・Excel などにも同じアカウントが残るため、サインイン情報を削除してサインアウト状態にする。Office が入っていなければスキップされる。
+> ※ Office が**受講者のアカウントでライセンス認証されている**場合、サインアウトすると未ライセンス状態になる（次の受講者が自分のアカウントでサインインし直す想定）。
 
 > **補足:** 後から点検し直したい場合は `powershell -ExecutionPolicy Bypass -File "$env:TEMP\cleanup.ps1" -Check`（read-only。何度でも安全）。
 
@@ -198,11 +214,12 @@ Remove-Item "$env:TEMP\cleanup.ps1" -ErrorAction SilentlyContinue
 
 PowerShell で上から順に実行する。
 
-##### B-1. ブラウザ・メモ帳・Zoom を終了
+##### B-1. ブラウザ・メモ帳・Zoom・Teams・Outlook を終了
 
 ```powershell
-# ブラウザ・メモ帳・Zoom を終了する（未保存内容ごと閉じる）
-Get-Process chrome, msedge, notepad, Zoom -ErrorAction SilentlyContinue | Stop-Process -Force
+# ブラウザ・メモ帳・Zoom・Teams・Outlook を終了する（未保存内容ごと閉じる）
+# ms-teams=新しい Teams ／ Teams=従来版 Teams ／ olk=新しい Outlook ／ OUTLOOK=従来版 Outlook
+Get-Process chrome, msedge, notepad, Zoom, ms-teams, Teams, olk, OUTLOOK -ErrorAction SilentlyContinue | Stop-Process -Force
 ```
 
 ##### B-2. ブラウザのデータ削除
@@ -231,14 +248,82 @@ Remove-Item "$env:LOCALAPPDATA\Packages\Microsoft.WindowsNotepad_8wekyb3d8bbwe\L
 Remove-Item "$env:APPDATA\Zoom\data" -Recurse -Force -ErrorAction SilentlyContinue
 ```
 
-##### B-5. ダウンロードフォルダを空にする
+##### B-5. Teams のログイン情報削除
+
+```powershell
+# 新しい Teams（Windows アプリ版）のログイン情報・キャッシュを削除
+Remove-Item "$env:LOCALAPPDATA\Packages\MSTeams_8wekyb3d8bbwe\LocalCache" -Recurse -Force -ErrorAction SilentlyContinue
+# 従来版 Teams のログイン情報・キャッシュを削除
+Remove-Item "$env:APPDATA\Microsoft\Teams" -Recurse -Force -ErrorAction SilentlyContinue
+```
+
+##### B-6. Outlook のログイン情報・プロファイル削除
+
+```powershell
+# 新しい Outlook（Windows アプリ版）のログイン情報・キャッシュを削除
+Remove-Item "$env:LOCALAPPDATA\Packages\Microsoft.OutlookForWindows_8wekyb3d8bbwe\LocalCache" -Recurse -Force -ErrorAction SilentlyContinue
+# 従来版 Outlook のデータファイル（.ost＝受信メールのキャッシュ）・署名・送信設定を削除
+Remove-Item "$env:LOCALAPPDATA\Microsoft\Outlook" -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item "$env:APPDATA\Microsoft\Outlook" -Recurse -Force -ErrorAction SilentlyContinue
+```
+
+```powershell
+# 従来版 Outlook のプロファイル（メールアドレス・アカウント設定）を削除
+# Office のバージョンキー（16.0 等）は環境によって複数残るため、まとめて対象にする
+Get-ChildItem 'HKCU:\Software\Microsoft\Office' -ErrorAction SilentlyContinue |
+  Where-Object { $_.PSChildName -match '^\d+\.\d+$' } | ForEach-Object {
+    foreach ($sub in @('Outlook\Profiles', 'Outlook\AutoDiscover')) {
+      Remove-Item "HKCU:\Software\Microsoft\Office\$($_.PSChildName)\$sub" -Recurse -Force -ErrorAction SilentlyContinue
+    }
+  }
+```
+
+##### B-7. Office のサインイン情報削除
+
+```powershell
+# Office アプリ（Word/Excel 等）のサインイン情報を削除（Office 未インストールなら何も起きない）
+Get-ChildItem 'HKCU:\Software\Microsoft\Office' -ErrorAction SilentlyContinue |
+  Where-Object { $_.PSChildName -match '^\d+\.\d+$' } | ForEach-Object {
+    Remove-Item "HKCU:\Software\Microsoft\Office\$($_.PSChildName)\Common\Identity" -Recurse -Force -ErrorAction SilentlyContinue
+  }
+```
+
+> **注意:** Office が受講者のアカウントでライセンス認証されている場合、サインアウトすると未ライセンス状態になります（次の受講者が自分のアカウントでサインインし直す想定）。
+
+##### B-8. Windows 資格情報の削除
+
+```powershell
+# 資格情報マネージャーから Teams/Outlook/Office 関連の資格情報を削除
+cmdkey /list | Select-String -Pattern '(?:LegacyGeneric|Domain|WindowsLive|MicrosoftAccount):\S+' -AllMatches |
+  ForEach-Object { $_.Matches.Value } |
+  Where-Object { $_ -match 'MicrosoftOffice|Teams|Outlook' } |
+  ForEach-Object {
+    $t = $_ -replace '^[A-Za-z]+:target=', ''
+    cmdkey /delete:$t
+  }
+```
+
+> 残りは **コントロールパネル → ユーザーアカウント → 資格情報マネージャー** で確認・削除できます。
+
+##### B-9. 職場または学校アカウントの削除
+
+```powershell
+# Windows「職場または学校アカウント」（設定 → アカウント → メールとアカウント）のサインイン情報を削除
+Get-ChildItem "$env:LOCALAPPDATA\Packages\Microsoft.AAD.BrokerPlugin_cw5n1h2txyewy\AC\TokenBroker\Accounts" -Force -ErrorAction SilentlyContinue |
+  Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+```
+
+> 削除されるのは**サインイン中ユーザーのトークンキャッシュ**だけで、PC 自体のドメイン参加・Azure AD 参加は解除されません。
+> 実行後も設定アプリの一覧に表示が残る場合は、**設定 → アカウント → メールとアカウント** から該当アカウントを「切断」してください。
+
+##### B-10. ダウンロードフォルダを空にする
 
 ```powershell
 # ダウンロードフォルダの中身を全削除（desktop.ini は除く）
 Get-ChildItem "$env:USERPROFILE\Downloads" -Force | Where-Object { $_.Name -ne 'desktop.ini' } | Remove-Item -Recurse -Force
 ```
 
-##### B-6. ピクチャのスクリーンショット削除
+##### B-11. ピクチャのスクリーンショット削除
 
 ```powershell
 # ピクチャのスクリーンショットを削除（Snipping Tool の自動保存・Win+PrtScn の保存先。desktop.ini は除く）
@@ -246,7 +331,7 @@ $shots = Join-Path ([Environment]::GetFolderPath('MyPictures')) 'Screenshots'
 if (Test-Path $shots) { Get-ChildItem $shots -Force | Where-Object { $_.Name -ne 'desktop.ini' } | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue }
 ```
 
-##### B-7. エクスプローラーの履歴削除
+##### B-12. エクスプローラーの履歴削除
 
 ```powershell
 # 履歴ファイルはエクスプローラーがロックするため、先にエクスプローラーを終了する
@@ -266,7 +351,7 @@ Remove-Item 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\TypedPaths
 # ※ エクスプローラー（タスクバー/デスクトップ）は Windows が数秒で自動復帰する（戻らなければサインアウト/再起動）
 ```
 
-##### B-8. C:\ 直下の非標準フォルダの確認・削除
+##### B-13. C:\ 直下の非標準フォルダの確認・削除
 
 ```powershell
 # C:\ 直下の標準以外のフォルダを列挙（研修生が作成した可能性）
@@ -282,14 +367,14 @@ Get-ChildItem 'C:\' -Directory -Force -ErrorAction SilentlyContinue | Where-Obje
 Remove-Item "C:\<名前>" -Recurse -Force
 ```
 
-##### B-9. ごみ箱を空にする
+##### B-14. ごみ箱を空にする
 
 ```powershell
 # ごみ箱を空にする
 Clear-RecycleBin -Force
 ```
 
-##### B-10. 点検（手動）
+##### B-15. 点検（手動）
 
 削除後、こちらで点検する（各項目に OK/NG が表示される）。
 
@@ -301,6 +386,22 @@ $shots = Join-Path ([Environment]::GetFolderPath('MyPictures')) 'Screenshots'
 $sc = (Get-ChildItem $shots -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne 'desktop.ini' }).Count
 if ($sc -eq 0) { Write-Host "OK: スクリーンショット なし" } else { Write-Host "NG: スクリーンショット $sc 件残存" }
 if (Test-Path "$env:APPDATA\Zoom\data") { Write-Host "NG: Zoom ログイン情報 残存" } else { Write-Host "OK: Zoom ログインなし" }
+foreach ($p in @("$env:LOCALAPPDATA\Packages\MSTeams_8wekyb3d8bbwe\LocalCache", "$env:APPDATA\Microsoft\Teams",
+                 "$env:LOCALAPPDATA\Packages\Microsoft.OutlookForWindows_8wekyb3d8bbwe\LocalCache",
+                 "$env:LOCALAPPDATA\Microsoft\Outlook", "$env:APPDATA\Microsoft\Outlook")) {
+  if (Test-Path $p) { Write-Host "NG: Teams/Outlook ログイン情報 残存 ($p)" } else { Write-Host "OK: ログイン情報なし ($p)" }
+}
+$prof = Get-ChildItem 'HKCU:\Software\Microsoft\Office' -ErrorAction SilentlyContinue |
+  Where-Object { $_.PSChildName -match '^\d+\.\d+$' } |
+  ForEach-Object { "HKCU:\Software\Microsoft\Office\$($_.PSChildName)\Outlook\Profiles",
+                   "HKCU:\Software\Microsoft\Office\$($_.PSChildName)\Common\Identity" } |
+  Where-Object { Test-Path $_ }
+if (-not $prof) { Write-Host "OK: Outlook プロファイル・Office サインインなし" } else { $prof | ForEach-Object { Write-Host "NG: 残存 ($_)" } }
+$cred = cmdkey /list | Select-String -Pattern '(?:LegacyGeneric|Domain|WindowsLive|MicrosoftAccount):\S+' -AllMatches |
+  ForEach-Object { $_.Matches.Value } | Where-Object { $_ -match 'MicrosoftOffice|Teams|Outlook' }
+if (-not $cred) { Write-Host "OK: Windows 資格情報（Teams/Outlook/Office）なし" } else { $cred | ForEach-Object { Write-Host "NG: 資格情報 残存 ($_)" } }
+$tk = (Get-ChildItem "$env:LOCALAPPDATA\Packages\Microsoft.AAD.BrokerPlugin_cw5n1h2txyewy\AC\TokenBroker\Accounts" -Recurse -File -Force -ErrorAction SilentlyContinue | Measure-Object).Count
+if ($tk -eq 0) { Write-Host "OK: 職場または学校アカウント なし" } else { Write-Host "NG: 職場または学校アカウント $tk 件残存" }
 foreach ($p in @("$env:LOCALAPPDATA\Google\Chrome\User Data\Default\History", "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\History")) {
   if (Test-Path $p) { Write-Host "NG: ブラウザ履歴 残存 ($p)" } else { Write-Host "OK: ブラウザ履歴なし ($p)" }
 }
