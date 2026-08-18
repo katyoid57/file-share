@@ -1,8 +1,13 @@
 ﻿# 研修PC アカウント残存チェック（Windows側・読み取り専用）
-# 実行: powershell -ExecutionPolicy Bypass -File "$env:TEMP\diag-accounts.ps1"
+# 実行: powershell -ExecutionPolicy Bypass -File "$env:TEMP\diag.ps1"
+# 検索: powershell -ExecutionPolicy Bypass -File "$env:TEMP\diag.ps1" -Account user@example.com
 #   Teams の「ようこそ」画面などに前の利用者のアカウントが残る原因を特定するための調査用。
 #   何も削除せず、ファイルも作らない（画面に表示するだけ）。何度実行しても安全。
+#   -Account を付けると、そのメールアドレスがどのファイル・レジストリに書かれているかを検索する
+#   （入力したアドレスはこの PC 内の検索にのみ使う。どこにも送信しない）。
 #   原因が判明して cleanup.ps1 に反映したら、このスクリプトは削除する。
+
+param([string]$Account)
 
 $ErrorActionPreference = 'Continue'
 
@@ -17,7 +22,20 @@ function Write-Found($msg) { Write-Host "  [残っている] $msg" -ForegroundCo
 function Write-None($msg)  { Write-Host "  [なし] $msg" -ForegroundColor Green }
 function Write-Info($msg)  { Write-Host "  $msg" }
 
-# バイナリファイルからメールアドレス形式の文字列を拾う（表示用。形式は非公開のため取れないこともある）
+# ファイルの中身に指定文字列が含まれるかを調べる（テキスト／UTF-16／ASCII 混在に対応）。
+function Test-FileContains($path, $needle) {
+  try {
+    $fi = Get-Item -LiteralPath $path -Force -ErrorAction Stop
+    if ($fi.Length -gt 20MB) { return $false }
+    $bytes = [System.IO.File]::ReadAllBytes($path)
+    $text = [Text.Encoding]::Unicode.GetString($bytes) + [Text.Encoding]::UTF8.GetString($bytes)
+    return ($text.IndexOf($needle, [StringComparison]::OrdinalIgnoreCase) -ge 0)
+  } catch {
+    return $false
+  }
+}
+
+# バイナリからメールアドレス形式の文字列を拾う（表示用。取れない場合はファイル名を返す）
 function Get-EmailsFromFile($path) {
   try {
     $bytes = [System.IO.File]::ReadAllBytes($path)
@@ -30,11 +48,8 @@ function Get-EmailsFromFile($path) {
 }
 
 Write-Host "=== 研修PC アカウント残存チェック（読み取り専用・削除はしません）===" -ForegroundColor Cyan
-Write-Host "Teams のようこそ画面に残るアカウントが、どこに保存されているかを調べます。"
 
 # ---- 1. PC 自体の参加状態 ----
-# ここが YES だと、アカウントは「PC の参加情報」として登録されているため
-# ファイル削除では消えず、設定アプリからの切断（または管理者対応）が必要になる。
 Write-Section 1 'PC のアカウント参加状態'
 $ds = dsregcmd /status 2>$null
 if ($ds) {
@@ -50,34 +65,35 @@ if ($ds) {
   Write-Info 'dsregcmd が実行できませんでした'
 }
 
-# ---- 2. WAM（AAD BrokerPlugin）のアカウント ----
-# cleanup.ps1 が削除している場所。ここが残っている場合は削除が失敗している。
-Write-Section 2 'Windows のアカウント登録（WAM / cleanup.ps1 の削除対象）'
-$wam = "$env:LOCALAPPDATA\Packages\Microsoft.AAD.BrokerPlugin_cw5n1h2txyewy\AC\TokenBroker\Accounts"
-$wamFiles = @(Get-ChildItem -Path $wam -Recurse -File -Force -ErrorAction SilentlyContinue)
-if ($wamFiles.Count -gt 0) {
-  Write-Found "$($wamFiles.Count) 件（cleanup.ps1 の削除が効いていない可能性があります）"
-  foreach ($f in $wamFiles) {
-    $mails = Get-EmailsFromFile $f.FullName
-    if ($mails.Count -gt 0) { $mails | ForEach-Object { Write-Info "- $_" } } else { Write-Info "- $($f.Name)" }
+# ---- 2〜7: アカウント情報が残りうる既知の場所 ----
+# 番号と場所の対応は最後のまとめで説明する。
+$Targets = @(
+  @{ No = 2; Name = 'WAM（AAD BrokerPlugin）';      Path = "$env:LOCALAPPDATA\Packages\Microsoft.AAD.BrokerPlugin_cw5n1h2txyewy\AC\TokenBroker\Accounts" },
+  @{ No = 3; Name = 'TokenBroker キャッシュ';       Path = "$env:LOCALAPPDATA\Microsoft\TokenBroker\Cache" },
+  @{ No = 6; Name = 'OneAuth';                      Path = "$env:LOCALAPPDATA\Microsoft\OneAuth" },
+  @{ No = 9; Name = 'IdentityCache';                Path = "$env:LOCALAPPDATA\Microsoft\IdentityCache" },
+  @{ No = 10; Name = 'TokenBroker\Accounts';        Path = "$env:LOCALAPPDATA\Microsoft\TokenBroker\Accounts" },
+  @{ No = 11; Name = 'Teams の LocalState';         Path = "$env:LOCALAPPDATA\Packages\MSTeams_8wekyb3d8bbwe\LocalState" },
+  @{ No = 12; Name = 'Teams の Settings（settings.dat）'; Path = "$env:LOCALAPPDATA\Packages\MSTeams_8wekyb3d8bbwe\Settings" },
+  @{ No = 13; Name = 'Teams の LocalCache';         Path = "$env:LOCALAPPDATA\Packages\MSTeams_8wekyb3d8bbwe\LocalCache" }
+)
+foreach ($t in $Targets) {
+  Write-Section $t.No "$($t.Name)"
+  Write-Info $t.Path
+  $files = @(Get-ChildItem -Path $t.Path -Recurse -File -Force -ErrorAction SilentlyContinue)
+  if ($files.Count -gt 0) {
+    Write-Found "$($files.Count) 件"
+    $mails = @()
+    foreach ($f in ($files | Select-Object -First 30)) { $mails += Get-EmailsFromFile $f.FullName }
+    $mails = @($mails | Select-Object -Unique)
+    if ($mails.Count -gt 0) { $mails | ForEach-Object { Write-Info "- $_" } }
+    $Hits += $t.No
+  } else {
+    Write-None 'ありません'
   }
-  $Hits += 2
-} else {
-  Write-None 'WAM のアカウント情報はありません'
 }
 
-# ---- 3. TokenBroker キャッシュ ----
-Write-Section 3 'TokenBroker キャッシュ'
-$tbc = @(Get-ChildItem "$env:LOCALAPPDATA\Microsoft\TokenBroker\Cache" -File -Force -ErrorAction SilentlyContinue)
-if ($tbc.Count -gt 0) {
-  Write-Found "$($tbc.Count) 件のキャッシュファイル"
-  $Hits += 3
-} else {
-  Write-None 'TokenBroker キャッシュはありません'
-}
-
-# ---- 4. IdentityCRL（保存済みID） ----
-# Microsoft のサインイン基盤がアカウント名（UPN）を保存する場所。
+# ---- 4. IdentityCRL ----
 Write-Section 4 'IdentityCRL の保存済みアカウント'
 $idcrl = @()
 foreach ($k in @('StoredIdentities', 'UserExtendedProperties')) {
@@ -107,21 +123,6 @@ if ($idstore.Count -gt 0) {
   Write-None 'IdentityStore キャッシュにアカウントはありません'
 }
 
-# ---- 6. OneAuth ----
-# 新しい Teams / Office が共通で使うアカウント保管庫。cleanup.ps1 では未対応。
-Write-Section 6 'OneAuth（Teams・Office 共通のアカウント保管庫）'
-$oneauth = @(Get-ChildItem "$env:LOCALAPPDATA\Microsoft\OneAuth" -Recurse -File -Force -ErrorAction SilentlyContinue)
-if ($oneauth.Count -gt 0) {
-  Write-Found "$($oneauth.Count) 件のファイル"
-  $mails = @()
-  foreach ($f in ($oneauth | Select-Object -First 30)) { $mails += Get-EmailsFromFile $f.FullName }
-  $mails = @($mails | Select-Object -Unique)
-  if ($mails.Count -gt 0) { $mails | ForEach-Object { Write-Info "- $_" } } else { Write-Info '- アカウント名は取り出せませんでした（ファイルのみ存在）' }
-  $Hits += 6
-} else {
-  Write-None 'OneAuth にアカウント情報はありません'
-}
-
 # ---- 7. WorkplaceJoin 登録 ----
 Write-Section 7 'WorkplaceJoin 登録（設定→メールとアカウント の登録元）'
 $wpj = @(Get-ChildItem 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\WorkplaceJoin' -Recurse -ErrorAction SilentlyContinue)
@@ -133,23 +134,65 @@ if ($wpj.Count -gt 0) {
   Write-None 'WorkplaceJoin の登録はありません'
 }
 
-# ---- 8. cleanup.ps1 が効いているかの確認 ----
-# ここが「残っている」なら、そもそもクリーンアップが実行されていない／失敗している。
-Write-Section 8 'cleanup.ps1 の Teams・Outlook 削除が効いているか'
-$appData = @(
-  "$env:LOCALAPPDATA\Packages\MSTeams_8wekyb3d8bbwe\LocalCache",
-  "$env:APPDATA\Microsoft\Teams",
-  "$env:LOCALAPPDATA\Packages\Microsoft.OutlookForWindows_8wekyb3d8bbwe\LocalCache",
-  "$env:LOCALAPPDATA\Microsoft\Outlook",
-  "$env:APPDATA\Microsoft\Outlook"
-)
-$left = @($appData | Where-Object { Test-Path $_ })
-if ($left.Count -gt 0) {
-  Write-Found "$($left.Count) 件のアプリデータが残っています"
-  $left | ForEach-Object { Write-Info "- $_" }
+# ---- 8. 関連プロセスの起動状況 ----
+# 起動中のプロセスがあると、そのファイルはロックされて削除できない。
+Write-Section 8 '関連プロセスの起動状況（起動中だと削除に失敗する）'
+$procNames = @('ms-teams', 'msteams', 'Teams', 'msedgewebview2', 'olk', 'OUTLOOK', 'OneDrive',
+               'Microsoft.SharePoint', 'msoia', 'WINWORD', 'EXCEL', 'POWERPNT', 'ONENOTE')
+$running = @(Get-Process -Name $procNames -ErrorAction SilentlyContinue)
+if ($running.Count -gt 0) {
+  Write-Found "起動中: $((($running | Select-Object -ExpandProperty ProcessName) | Select-Object -Unique) -join ', ')"
   $Hits += 8
 } else {
-  Write-None 'Teams・Outlook のアプリデータは削除済みです'
+  Write-None '関連プロセスは起動していません'
+}
+
+# ---- 14. メールアドレスの全文検索（-Account 指定時のみ）----
+if ($Account) {
+  Write-Section 14 "「$Account」がどこに書かれているかを検索"
+  Write-Info '数分かかります。そのままお待ちください…'
+  $searchRoots = @(
+    "$env:LOCALAPPDATA\Microsoft",
+    "$env:APPDATA\Microsoft",
+    "$env:LOCALAPPDATA\Packages\MSTeams_8wekyb3d8bbwe",
+    "$env:LOCALAPPDATA\Packages\Microsoft.AAD.BrokerPlugin_cw5n1h2txyewy",
+    "$env:LOCALAPPDATA\Packages\Microsoft.OutlookForWindows_8wekyb3d8bbwe"
+  )
+  $fileHits = @()
+  foreach ($root in $searchRoots) {
+    if (-not (Test-Path $root)) { continue }
+    Write-Info "検索中: $root"
+    foreach ($f in @(Get-ChildItem -Path $root -Recurse -File -Force -ErrorAction SilentlyContinue)) {
+      if (Test-FileContains $f.FullName $Account) { $fileHits += $f.FullName }
+    }
+  }
+  Write-Info 'レジストリ（HKCU:\Software\Microsoft）を検索中…'
+  $regHits = @()
+  foreach ($k in @(Get-ChildItem 'HKCU:\Software\Microsoft' -Recurse -ErrorAction SilentlyContinue)) {
+    try {
+      $props = Get-ItemProperty $k.PSPath -ErrorAction SilentlyContinue
+      foreach ($p in $props.PSObject.Properties) {
+        if ("$($p.Name) $($p.Value)".IndexOf($Account, [StringComparison]::OrdinalIgnoreCase) -ge 0) {
+          $regHits += ($k.Name + ' → ' + $p.Name)
+          break
+        }
+      }
+    } catch { }
+  }
+  Write-Host ""
+  if ($fileHits.Count -gt 0) {
+    Write-Found "ファイル $($fileHits.Count) 件にアドレスが書かれています"
+    $fileHits | ForEach-Object { Write-Info "- $_" }
+  } else {
+    Write-None 'ファイルにはアドレスは見つかりませんでした'
+  }
+  if ($regHits.Count -gt 0) {
+    Write-Found "レジストリ $($regHits.Count) 件にアドレスが書かれています"
+    $regHits | Select-Object -Unique | ForEach-Object { Write-Info "- $_" }
+  } else {
+    Write-None 'レジストリにはアドレスは見つかりませんでした'
+  }
+  if ($fileHits.Count -gt 0 -or $regHits.Count -gt 0) { $Hits += 14 }
 }
 
 # ---- まとめ ----
@@ -158,21 +201,25 @@ Write-Host "=== まとめ ===" -ForegroundColor Cyan
 $Hits = @($Hits | Sort-Object -Unique)
 if ($Hits.Count -eq 0) {
   Write-Host "  アカウントの残骸は見つかりませんでした。" -ForegroundColor Green
-  Write-Host "  それでもようこそ画面にアカウントが出る場合は、画面に出ているアカウント名を控えてください。"
 } else {
-  Write-Host "  アカウント情報が残っている項目: $($Hits -join ', ')" -ForegroundColor Red
-  Write-Host "  → この番号（と、下の対処の要否）を控えて連絡してください。番号だけで原因の切り分けができます。"
+  Write-Host "  残っている項目: $($Hits -join ', ')" -ForegroundColor Red
+  Write-Host "  → この番号を控えて連絡してください。"
   Write-Host ""
   Write-Host "  【番号ごとの意味】"
-  if ($Hits -contains 1) { Write-Host "   1: PC 自体が職場アカウントに参加。設定 → アカウント → メールとアカウント から切断が必要（スクリプトでは消せない）" }
-  if ($Hits -contains 2) { Write-Host "   2: cleanup.ps1 の削除対象が残っている。権限不足かファイルのロックで失敗している可能性" }
-  if ($Hits -contains 3) { Write-Host "   3: TokenBroker キャッシュ。cleanup.ps1 に削除処理を追加すれば消せる" }
-  if ($Hits -contains 4) { Write-Host "   4: IdentityCRL。ここにアカウント名が残る。cleanup.ps1 に削除処理を追加すれば消せる" }
-  if ($Hits -contains 5) { Write-Host "   5: IdentityStore キャッシュ。Windows のサインイン情報側に残っている" }
-  if ($Hits -contains 6) { Write-Host "   6: OneAuth。新しい Teams のようこそ画面の候補元として有力。cleanup.ps1 に削除処理を追加すれば消せる" }
-  if ($Hits -contains 7) { Write-Host "   7: WorkplaceJoin 登録。設定 → アカウント → メールとアカウント から切断が必要" }
-  if ($Hits -contains 8) { Write-Host "   8: そもそも Teams・Outlook のクリーンアップが実行されていない／失敗している" }
+  if ($Hits -contains 1)  { Write-Host "   1: PC 自体が職場アカウントに参加。設定 → アカウント → メールとアカウント から切断が必要" }
+  if ($Hits -contains 2)  { Write-Host "   2: WAM。cleanup.ps1 の削除対象" }
+  if ($Hits -contains 3)  { Write-Host "   3: TokenBroker キャッシュ。cleanup.ps1 の削除対象" }
+  if ($Hits -contains 4)  { Write-Host "   4: IdentityCRL。未対応" }
+  if ($Hits -contains 5)  { Write-Host "   5: IdentityStore キャッシュ。未対応" }
+  if ($Hits -contains 6)  { Write-Host "   6: OneAuth。cleanup.ps1 の削除対象（消えていなければ削除失敗か再作成）" }
+  if ($Hits -contains 7)  { Write-Host "   7: WorkplaceJoin 登録。設定アプリから切断が必要" }
+  if ($Hits -contains 8)  { Write-Host "   8: 関連プロセスが起動中。これが原因で削除に失敗している可能性が高い" }
+  if ($Hits -contains 9)  { Write-Host "   9: IdentityCache。未対応" }
+  if ($Hits -contains 10) { Write-Host "  10: TokenBroker\\Accounts。未対応" }
+  if ($Hits -contains 11) { Write-Host "  11: Teams の LocalState。未対応（cleanup.ps1 は LocalCache のみ削除）" }
+  if ($Hits -contains 12) { Write-Host "  12: Teams の Settings（settings.dat）。未対応" }
+  if ($Hits -contains 13) { Write-Host "  13: Teams の LocalCache。Teams を起動すると作り直されるため、起動後なら正常" }
+  if ($Hits -contains 14) { Write-Host "  14: 検索でアドレスの実際の置き場所が判明。上の一覧が対処すべき場所" }
 }
 Write-Host ""
-Write-Host "  ※ このスクリプトは何も削除していません。調査後は本体を削除してください:"
-Write-Host '     Remove-Item "$env:TEMP\diag-accounts.ps1" -ErrorAction SilentlyContinue'
+Write-Host "  ※ このスクリプトは何も削除していません。"
