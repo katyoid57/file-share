@@ -3,6 +3,7 @@
 # 確認: powershell -ExecutionPolicy Bypass -File .\cleanup.ps1 -Check   … 確認のみ（read-only。何度でも安全に実行可）
 #   ブラウザ(Chrome/Edge)のCookie・履歴・ブックマーク・タブ削除、メモ帳の未保存タブ削除、Zoom のログイン情報削除、
 #   Teams・Outlook のログイン情報削除、Office のサインイン解除、Windows 資格情報・職場アカウントの削除、
+#   サインイン共通キャッシュ（OneAuth・TokenBroker）の削除、
 #   ダウンロードフォルダの全削除、ピクチャのスクリーンショット削除、エクスプローラーの履歴削除、
 #   C:\ 直下の非標準フォルダの確認・削除、ごみ箱を空にする。
 param([switch]$Check)
@@ -42,6 +43,16 @@ $LoginDataTargets = @(
 # Windows の「職場または学校アカウント」（設定 → アカウント → メールとアカウント）のトークンキャッシュ。
 # ここが残っていると Teams/Outlook のデータを消しても次回起動時に同じアカウントが候補表示される。
 $TokenBrokerAccounts = "$env:LOCALAPPDATA\Packages\Microsoft.AAD.BrokerPlugin_cw5n1h2txyewy\AC\TokenBroker\Accounts"
+
+# サインインの共通キャッシュ。新しい Teams の「ようこそ」画面に出るアカウント一覧は OneAuth を読んでいるため、
+# アプリ側のデータを消してもここが残っていると前の利用者のアカウントが選べてしまう。
+#   OneAuth … Teams・Outlook・Office・OneDrive が共通で使うアカウント保管庫
+#   TokenBroker\Cache … 取得済みトークンの応答キャッシュ
+# ※ どちらもフォルダ自体は残し中身だけ削除する（次回サインイン時に作り直される）。
+$SignInCachePaths = @(
+  "$env:LOCALAPPDATA\Microsoft\OneAuth",
+  "$env:LOCALAPPDATA\Microsoft\TokenBroker\Cache"
+)
 
 # HKCU の Office バージョンキー（16.0 等）を列挙する。Office 2016 以降は 16.0 だが、
 # 環境によって複数のバージョンキーが残っていることがあるため数値バージョンをすべて対象にする。
@@ -89,11 +100,12 @@ function Get-OfficeCredentialTargets {
   $targets | Select-Object -Unique
 }
 
-# 職場アカウントのトークンキャッシュから、表示用のアカウント名（メールアドレス形式）を抜き出す。
+# 指定フォルダ配下のキャッシュファイルから、表示用のアカウント名（メールアドレス形式）を抜き出す。
 # ファイル形式は非公開のため、取り出せない場合はファイル名を返す（表示専用。判定には使わない）。
-function Get-TokenAccountNames {
+function Get-AccountNamesFromPath {
+  param([string]$Path)
   $names = @()
-  foreach ($f in @(Get-ChildItem -Path $TokenBrokerAccounts -Recurse -File -Force -ErrorAction SilentlyContinue)) {
+  foreach ($f in @(Get-ChildItem -Path $Path -Recurse -File -Force -ErrorAction SilentlyContinue | Select-Object -First 30)) {
     $hit = @()
     try {
       $bytes = [System.IO.File]::ReadAllBytes($f.FullName)
@@ -241,11 +253,24 @@ function Invoke-Check {
   $tokenItems = @(Get-ChildItem -Path $TokenBrokerAccounts -Recurse -File -Force -ErrorAction SilentlyContinue)
   if ($tokenItems.Count -gt 0) {
     Write-Host "[NG] 職場または学校アカウント: サインイン情報が残っています" -ForegroundColor Red
-    Get-TokenAccountNames | ForEach-Object { Write-Host "       - $_" }
+    Get-AccountNamesFromPath $TokenBrokerAccounts | ForEach-Object { Write-Host "       - $_" }
     Write-Host "       → クリーンアップ実行で削除できます。それでも設定アプリの一覧に残る場合は" -ForegroundColor Red
     Write-Host "         設定 → アカウント → メールとアカウント から該当アカウントを「切断」してください。" -ForegroundColor Red
   } else {
     Write-Host "[OK] 職場または学校アカウント: サインイン情報はありません" -ForegroundColor Green
+  }
+
+  # サインイン共通キャッシュ（OneAuth・TokenBroker）の確認
+  # ここが残っていると、新しい Teams の「ようこそ」画面に前の利用者のアカウントが候補表示される。
+  foreach ($p in $SignInCachePaths) {
+    $name = Split-Path $p -Leaf
+    $items = @(Get-ChildItem -Path $p -Recurse -File -Force -ErrorAction SilentlyContinue)
+    if ($items.Count -gt 0) {
+      Write-Host "[NG] サインインキャッシュ（$name）: $($items.Count) 件残っています" -ForegroundColor Red
+      Get-AccountNamesFromPath $p | ForEach-Object { Write-Host "       - $_" }
+    } else {
+      Write-Host "[OK] サインインキャッシュ（$name）: 残っていません" -ForegroundColor Green
+    }
   }
 
   # エクスプローラー履歴の確認（最近使ったファイル・クイックアクセス・検索/アドレスバー履歴）
@@ -307,8 +332,10 @@ function Invoke-Cleanup {
   # 1. ブラウザ・メモ帳・Zoom・Teams・Outlook を終了する
   #    （プロファイル/未保存タブ/ログイン情報のロックを外すため。-Force で未保存内容ごと閉じる）
   #    ms-teams=新しい Teams / Teams=従来版 Teams / olk=新しい Outlook / OUTLOOK=従来版 Outlook
-  Write-Host "=== ブラウザ・メモ帳・Zoom・Teams・Outlook を終了します ===" -ForegroundColor Cyan
-  foreach ($name in @('chrome', 'msedge', 'notepad', 'Zoom', 'ms-teams', 'Teams', 'olk', 'OUTLOOK')) {
+  #    OneDrive はサインイン共通キャッシュ（OneAuth）を掴むため、削除できるよう一緒に終了する
+  #    （次回サインイン時に自動起動する）。
+  Write-Host "=== ブラウザ・メモ帳・Zoom・Teams・Outlook・OneDrive を終了します ===" -ForegroundColor Cyan
+  foreach ($name in @('chrome', 'msedge', 'notepad', 'Zoom', 'ms-teams', 'Teams', 'olk', 'OUTLOOK', 'OneDrive')) {
     Get-Process -Name $name -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
   }
   Start-Sleep -Seconds 2
@@ -434,7 +461,7 @@ function Invoke-Cleanup {
   $tokenItems = @(Get-ChildItem -Path $TokenBrokerAccounts -Recurse -File -Force -ErrorAction SilentlyContinue)
   if ($tokenItems.Count -gt 0) {
     Write-Host "  以下のアカウントのサインイン情報を削除します:"
-    Get-TokenAccountNames | ForEach-Object { Write-Host "    - $_" }
+    Get-AccountNamesFromPath $TokenBrokerAccounts | ForEach-Object { Write-Host "    - $_" }
     Get-ChildItem -Path $TokenBrokerAccounts -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
     $left = @(Get-ChildItem -Path $TokenBrokerAccounts -Recurse -File -Force -ErrorAction SilentlyContinue)
     if ($left.Count -gt 0) {
@@ -447,7 +474,31 @@ function Invoke-Cleanup {
     Write-Host "  スキップ: 職場または学校アカウントのサインイン情報はありません。"
   }
 
-  # 10. ダウンロードフォルダの中身を全削除する
+  # 10. サインイン共通キャッシュ（OneAuth・TokenBroker）を削除する
+  #     新しい Teams の「ようこそ」画面に出るアカウント一覧はここ（OneAuth）を読んでいるため、
+  #     アプリのデータを消してもここが残っていると前の利用者のアカウントが選べてしまう。
+  #     ※ OneAuth は OneDrive も共用するため、削除すると OneDrive もサインアウトする。
+  Write-Host ""
+  Write-Host "=== サインイン共通キャッシュ（OneAuth・TokenBroker）を削除します ===" -ForegroundColor Cyan
+  foreach ($p in $SignInCachePaths) {
+    $name = Split-Path $p -Leaf
+    $items = @(Get-ChildItem -Path $p -Force -ErrorAction SilentlyContinue)
+    if ($items.Count -eq 0) {
+      Write-Host "  スキップ: $name にサインイン情報はありません。"
+      continue
+    }
+    Write-Host "  削除します: $name（$p）"
+    Get-AccountNamesFromPath $p | ForEach-Object { Write-Host "    - $_" }
+    $items | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+    $left = @(Get-ChildItem -Path $p -Recurse -File -Force -ErrorAction SilentlyContinue)
+    if ($left.Count -gt 0) {
+      Write-Host "    一部が削除できませんでした（$($left.Count) 件）。アプリを閉じてから再実行してください。" -ForegroundColor Red
+    } else {
+      Write-Host "    削除しました。"
+    }
+  }
+
+  # 11. ダウンロードフォルダの中身を全削除する
   Write-Host ""
   Write-Host "=== ダウンロードフォルダを空にします ===" -ForegroundColor Cyan
   $downloads = "$env:USERPROFILE\Downloads"
@@ -467,7 +518,7 @@ function Invoke-Cleanup {
     Write-Host "  ダウンロードフォルダは既に空です。"
   }
 
-  # 11. ピクチャのスクリーンショットを削除する（Snipping Tool の自動保存・Win+PrtScn の保存先）
+  # 12. ピクチャのスクリーンショットを削除する（Snipping Tool の自動保存・Win+PrtScn の保存先）
   Write-Host ""
   Write-Host "=== ピクチャのスクリーンショットを削除します ===" -ForegroundColor Cyan
   $screenshots = Join-Path ([Environment]::GetFolderPath('MyPictures')) 'Screenshots'
@@ -484,7 +535,7 @@ function Invoke-Cleanup {
     Write-Host "  スキップ: スクリーンショットフォルダはありません（保存されていません）。"
   }
 
-  # 12. エクスプローラーの履歴を削除する（最近使ったファイル・クイックアクセス・検索/アドレスバー履歴）
+  # 13. エクスプローラーの履歴を削除する（最近使ったファイル・クイックアクセス・検索/アドレスバー履歴）
   #    履歴ファイル（ジャンプリスト等）はエクスプローラー（シェル）が掴んでロックし、
   #    起動中は削除が失敗したり終了時に履歴を書き戻したりするため、
   #    先にエクスプローラーを終了 → 削除 → 起動し直す、の順で行う。
@@ -512,7 +563,7 @@ function Invoke-Cleanup {
   Write-Host "  最近使ったファイル・クイックアクセス・検索/アドレスバー履歴を削除しました。"
   Write-Host "  ※ タスクバー/デスクトップは Windows が数秒で自動復帰します（戻らない場合はサインアウト/再起動）。"
 
-  # 13. C:\ 直下の非標準フォルダを検知して削除する（研修生が C:\ 直下に作成した可能性。1 件ずつ確認）
+  # 14. C:\ 直下の非標準フォルダを検知して削除する（研修生が C:\ 直下に作成した可能性。1 件ずつ確認）
   Write-Host ""
   Write-Host "=== C:\ 直下の非標準フォルダを確認します ===" -ForegroundColor Cyan
   $rootDirs = Get-ChildItem -Path 'C:\' -Directory -Force -ErrorAction SilentlyContinue | Where-Object { $StandardRootDirs -notcontains $_.Name }
@@ -536,7 +587,7 @@ function Invoke-Cleanup {
     }
   }
 
-  # 14. ごみ箱を空にする
+  # 15. ごみ箱を空にする
   Write-Host ""
   Write-Host "=== ごみ箱を空にします ===" -ForegroundColor Cyan
   Clear-RecycleBin -Force -ErrorAction SilentlyContinue

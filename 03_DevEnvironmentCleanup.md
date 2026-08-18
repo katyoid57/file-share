@@ -8,7 +8,7 @@
 | | クリーンアップ内容 |
 |---|---|
 | **WSL側** | Claude Code 認証解除 ／ GitHub CLI 認証解除（下流工程研修のみ）／ Claude Code 履歴削除 ／ git・bash の個人痕跡削除 ／ 研修資料の一括削除（ホーム直下の `setup.sh`・`cleanup.sh` 以外）／ 見慣れない隠し項目の参考表示 ／ VSCode の標準外拡張機能の確認・削除 |
-| **Windows側** | ブラウザ（Chrome・Edge）の Cookie・閲覧履歴・ブックマーク・タブ/セッション削除 ／ メモ帳の未保存タブ削除 ／ Zoom のログイン情報削除 ／ **Teams・Outlook のログイン情報削除（新しい版・従来版の両方）** ／ **Office のサインイン解除** ／ **Windows 資格情報・「職場または学校アカウント」の削除** ／ ダウンロードフォルダの全削除 ／ ピクチャのスクリーンショット削除 ／ エクスプローラー履歴（最近使ったファイル・クイックアクセス・検索/アドレスバー）削除 ／ C:\ 直下の非標準フォルダの確認・削除 ／ ごみ箱を空にする |
+| **Windows側** | ブラウザ（Chrome・Edge）の Cookie・閲覧履歴・ブックマーク・タブ/セッション削除 ／ メモ帳の未保存タブ削除 ／ Zoom のログイン情報削除 ／ **Teams・Outlook のログイン情報削除（新しい版・従来版の両方）** ／ **Office のサインイン解除** ／ **Windows 資格情報・「職場または学校アカウント」の削除** ／ **サインイン共通キャッシュ（OneAuth・TokenBroker）の削除** ／ ダウンロードフォルダの全削除 ／ ピクチャのスクリーンショット削除 ／ エクスプローラー履歴（最近使ったファイル・クイックアクセス・検索/アドレスバー）削除 ／ C:\ 直下の非標準フォルダの確認・削除 ／ ごみ箱を空にする |
 
 > **残すもの:** WSL/Ubuntu 本体、VSCode、`gh`・`claude`・JDK・Maven などのツール類と環境変数は削除しません（環境は変更しません）。
 
@@ -159,7 +159,7 @@ Invoke-WebRequest -Uri https://raw.githubusercontent.com/katyoid57/file-share/ma
 powershell -ExecutionPolicy Bypass -File "$env:TEMP\cleanup.ps1"
 ```
 
-実行すると `y` の入力を求められる（「開始」「ダウンロードフォルダ削除」、および **C:\ 直下に非標準フォルダがあればフォルダごとに1件ずつ**）。`y` で進めると、概要の表の内容（ブラウザ・メモ帳・Zoom・Teams・Outlook の終了とデータ削除、Office のサインイン解除、Windows 資格情報・職場アカウントの削除、ダウンロード／スクリーンショット削除、エクスプローラー履歴削除、C:\ 直下の非標準フォルダ削除、ごみ箱の空化）が実行され、続けて**確認（点検）が自動で実行される**。
+実行すると `y` の入力を求められる（「開始」「ダウンロードフォルダ削除」、および **C:\ 直下に非標準フォルダがあればフォルダごとに1件ずつ**）。`y` で進めると、概要の表の内容（ブラウザ・メモ帳・Zoom・Teams・Outlook の終了とデータ削除、Office のサインイン解除、Windows 資格情報・職場アカウント・サインイン共通キャッシュの削除、ダウンロード／スクリーンショット削除、エクスプローラー履歴削除、C:\ 直下の非標準フォルダ削除、ごみ箱の空化）が実行され、続けて**確認（点検）が自動で実行される**。
 
 > **C:\ 直下の非標準フォルダ:** 標準フォルダ（Windows／Program Files／Users 等）以外が `C:\` 直下にあれば、研修生が作成した可能性があるものとして**1件ずつ名前を確認して** `y/N` で削除できる。確認（`-Check`）では削除せず `[情報]` として列挙するだけ。
 > ※ `C:\` 直下のフォルダ削除は**管理者権限が必要**な場合がある。「削除に失敗しました」と出たら、PowerShell を**管理者として実行**して再度クリーンアップを実行する。
@@ -174,6 +174,11 @@ powershell -ExecutionPolicy Bypass -File "$env:TEMP\cleanup.ps1"
 
 > **Office のサインイン:** Word・Excel などにも同じアカウントが残るため、サインイン情報を削除してサインアウト状態にする。Office が入っていなければスキップされる。
 > ※ Office が**受講者のアカウントでライセンス認証されている**場合、サインアウトすると未ライセンス状態になる（次の受講者が自分のアカウントでサインインし直す想定）。
+
+> **サインイン共通キャッシュ（OneAuth・TokenBroker）:** 新しい Teams の「ようこそ」画面に出る**アカウントの選択肢はここを読んでいる**ため、Teams のデータを消してもここが残っていると前の受講者のアカウントが一覧に出てしまう（パスワードは要求されるが、メールアドレスは見える状態）。
+> ※ OneAuth は **OneDrive も共用**しているため、削除すると OneDrive もサインアウトする。また起動中はファイルがロックされるため、スクリプトが**自動で OneDrive を終了してから**削除する（次回サインイン時に自動起動する）。
+
+> **確認のとき Teams を起動した場合:** Teams を起動すると `LocalCache` が作り直されるため、その後に `-Check` を実行すると Teams が `[NG]` と表示される。**ようこそ画面にアカウントの選択肢が出なければ問題ない**（ログイン情報そのものは消えている）。厳密に確認したい場合は、Teams を閉じてからクリーンアップを再実行する。
 
 > **補足:** 後から点検し直したい場合は `powershell -ExecutionPolicy Bypass -File "$env:TEMP\cleanup.ps1" -Check`（read-only。何度でも安全）。
 
@@ -214,12 +219,13 @@ Remove-Item "$env:TEMP\cleanup.ps1" -ErrorAction SilentlyContinue
 
 PowerShell で上から順に実行する。
 
-##### B-1. ブラウザ・メモ帳・Zoom・Teams・Outlook を終了
+##### B-1. ブラウザ・メモ帳・Zoom・Teams・Outlook・OneDrive を終了
 
 ```powershell
-# ブラウザ・メモ帳・Zoom・Teams・Outlook を終了する（未保存内容ごと閉じる）
+# ブラウザ・メモ帳・Zoom・Teams・Outlook・OneDrive を終了する（未保存内容ごと閉じる）
 # ms-teams=新しい Teams ／ Teams=従来版 Teams ／ olk=新しい Outlook ／ OUTLOOK=従来版 Outlook
-Get-Process chrome, msedge, notepad, Zoom, ms-teams, Teams, olk, OUTLOOK -ErrorAction SilentlyContinue | Stop-Process -Force
+# OneDrive はサインイン共通キャッシュ（B-10）を掴むため一緒に終了する（次回サインイン時に自動起動する）
+Get-Process chrome, msedge, notepad, Zoom, ms-teams, Teams, olk, OUTLOOK, OneDrive -ErrorAction SilentlyContinue | Stop-Process -Force
 ```
 
 ##### B-2. ブラウザのデータ削除
@@ -316,14 +322,26 @@ Get-ChildItem "$env:LOCALAPPDATA\Packages\Microsoft.AAD.BrokerPlugin_cw5n1h2txye
 > 削除されるのは**サインイン中ユーザーのトークンキャッシュ**だけで、PC 自体のドメイン参加・Azure AD 参加は解除されません。
 > 実行後も設定アプリの一覧に表示が残る場合は、**設定 → アカウント → メールとアカウント** から該当アカウントを「切断」してください。
 
-##### B-10. ダウンロードフォルダを空にする
+##### B-10. サインイン共通キャッシュ（OneAuth・TokenBroker）の削除
+
+```powershell
+# 新しい Teams の「ようこそ」画面に出るアカウントの選択肢はここ（OneAuth）を読んでいる
+# フォルダ自体は残し、中身だけ削除する（次回サインイン時に作り直される）
+foreach ($p in @("$env:LOCALAPPDATA\Microsoft\OneAuth", "$env:LOCALAPPDATA\Microsoft\TokenBroker\Cache")) {
+  Get-ChildItem $p -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+}
+```
+
+> OneAuth は **OneDrive も共用**しているため、削除すると OneDrive もサインアウトします。起動中はロックされて削除できないので、**B-1 で OneDrive を終了してから**実行してください。
+
+##### B-11. ダウンロードフォルダを空にする
 
 ```powershell
 # ダウンロードフォルダの中身を全削除（desktop.ini は除く）
 Get-ChildItem "$env:USERPROFILE\Downloads" -Force | Where-Object { $_.Name -ne 'desktop.ini' } | Remove-Item -Recurse -Force
 ```
 
-##### B-11. ピクチャのスクリーンショット削除
+##### B-12. ピクチャのスクリーンショット削除
 
 ```powershell
 # ピクチャのスクリーンショットを削除（Snipping Tool の自動保存・Win+PrtScn の保存先。desktop.ini は除く）
@@ -331,7 +349,7 @@ $shots = Join-Path ([Environment]::GetFolderPath('MyPictures')) 'Screenshots'
 if (Test-Path $shots) { Get-ChildItem $shots -Force | Where-Object { $_.Name -ne 'desktop.ini' } | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue }
 ```
 
-##### B-12. エクスプローラーの履歴削除
+##### B-13. エクスプローラーの履歴削除
 
 ```powershell
 # 履歴ファイルはエクスプローラーがロックするため、先にエクスプローラーを終了する
@@ -351,7 +369,7 @@ Remove-Item 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\TypedPaths
 # ※ エクスプローラー（タスクバー/デスクトップ）は Windows が数秒で自動復帰する（戻らなければサインアウト/再起動）
 ```
 
-##### B-13. C:\ 直下の非標準フォルダの確認・削除
+##### B-14. C:\ 直下の非標準フォルダの確認・削除
 
 ```powershell
 # C:\ 直下の標準以外のフォルダを列挙（研修生が作成した可能性）
@@ -367,14 +385,14 @@ Get-ChildItem 'C:\' -Directory -Force -ErrorAction SilentlyContinue | Where-Obje
 Remove-Item "C:\<名前>" -Recurse -Force
 ```
 
-##### B-14. ごみ箱を空にする
+##### B-15. ごみ箱を空にする
 
 ```powershell
 # ごみ箱を空にする
 Clear-RecycleBin -Force
 ```
 
-##### B-15. 点検（手動）
+##### B-16. 点検（手動）
 
 削除後、こちらで点検する（各項目に OK/NG が表示される）。
 
@@ -402,6 +420,10 @@ $cred = cmdkey /list | Select-String -Pattern '(?:LegacyGeneric|Domain|WindowsLi
 if (-not $cred) { Write-Host "OK: Windows 資格情報（Teams/Outlook/Office）なし" } else { $cred | ForEach-Object { Write-Host "NG: 資格情報 残存 ($_)" } }
 $tk = (Get-ChildItem "$env:LOCALAPPDATA\Packages\Microsoft.AAD.BrokerPlugin_cw5n1h2txyewy\AC\TokenBroker\Accounts" -Recurse -File -Force -ErrorAction SilentlyContinue | Measure-Object).Count
 if ($tk -eq 0) { Write-Host "OK: 職場または学校アカウント なし" } else { Write-Host "NG: 職場または学校アカウント $tk 件残存" }
+foreach ($p in @("$env:LOCALAPPDATA\Microsoft\OneAuth", "$env:LOCALAPPDATA\Microsoft\TokenBroker\Cache")) {
+  $n = (Get-ChildItem $p -Recurse -File -Force -ErrorAction SilentlyContinue | Measure-Object).Count
+  if ($n -eq 0) { Write-Host "OK: サインインキャッシュ なし ($p)" } else { Write-Host "NG: サインインキャッシュ $n 件残存 ($p)" }
+}
 foreach ($p in @("$env:LOCALAPPDATA\Google\Chrome\User Data\Default\History", "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\History")) {
   if (Test-Path $p) { Write-Host "NG: ブラウザ履歴 残存 ($p)" } else { Write-Host "OK: ブラウザ履歴なし ($p)" }
 }
