@@ -1,0 +1,402 @@
+﻿# 研修環境セットアップ（Windows側・上流工程研修）
+# 実行: powershell -ExecutionPolicy Bypass -File .\setup.ps1          … インストールを行い、完了後に確認（-Check 相当）も自動実行する
+# 確認: powershell -ExecutionPolicy Bypass -File .\setup.ps1 -Check   … 確認のみ（read-only。何度でも安全に実行可）
+#   Git for Windows → Python 3.12 → Python ライブラリ3種 → Node.js 22 → LibreOffice → Claude デスクトップアプリ
+#   の順にインストールする。インストール済みのものは自動でスキップする。
+#   ※ Git for Windows は Claude デスクトップアプリの Code タブが動くための必須条件のため、アプリより先に入れる。
+#   ※ Windows PowerShell 5.1 で動作する範囲で書いている（研修では 7 系を導入しない）。
+param([switch]$Check)
+
+$ErrorActionPreference = 'Continue'
+
+# 研修で使うバージョン。提案資料の「受講環境と事前セットアップ」に合わせている。
+$PythonVersion = '3.12'                                   # Python は 3.12 系
+$NodeMajor     = '22'                                     # Node.js は 22 系（LTS）
+$PyLibs        = @('python-docx', 'openpyxl', 'python-pptx')  # Word・Excel・スライドの生成に使う
+$PyImportTest  = 'import docx, openpyxl, pptx'            # ライブラリ名と読み込み名が違うため別に持つ
+
+# 合否の判定条件。インストール時と確認時で基準がずれないよう1か所に置く。
+$PythonPattern = "Python $PythonVersion.*"
+$NodePattern   = "v$NodeMajor.*"
+
+# LibreOffice の実行ファイル。64bit 版と 32bit 版で置き場所が違うため両方を候補にする。
+$SofficeCandidates = @( (Join-Path $env:ProgramFiles 'LibreOffice\program\soffice.exe') )
+# 32bit 版の置き場所。環境変数が無い場合に Join-Path が失敗するため、あるときだけ足す。
+if (${env:ProgramFiles(x86)}) {
+  $SofficeCandidates += (Join-Path ${env:ProgramFiles(x86)} 'LibreOffice\program\soffice.exe')
+}
+
+$ContactNote = '解決しない場合は、手順書の「B. 手動で1つずつインストール」で該当のツールを入れ直してください。'
+
+# winget が見つからずインストールを行わなかったときに立てる。最後の自動確認を抑えるために使う。
+$script:SetupAborted = $false
+
+# 別プロセスのインストーラーが書き込んだ PATH を、実行中のこのセッションに取り込む。
+# （PATH の変更は起動中のウィンドウには反映されないため、インストール直後の確認のために読み直す）
+function Update-SessionPath {
+  $machine = [Environment]::GetEnvironmentVariable('Path', 'Machine')
+  $user    = [Environment]::GetEnvironmentVariable('Path', 'User')
+  $env:Path = ($machine, $user | Where-Object { $_ }) -join ';'
+}
+
+# コマンドが PATH から解決できるか調べ、実行ファイルのパスを返す（見つからなければ $null）。
+# ※ WindowsApps 配下（Microsoft Store のアプリ実行エイリアス）を除外してはいけない。winget 自身が
+#    そこにあるほか、手順書の B-7 と Git Bash での確認はエイリアスもそのまま見るため、除外すると
+#    スクリプトだけが別の python を見て判定が食い違う。エイリアスの空振りは表示側で見分ける。
+function Resolve-Tool {
+  param([string]$Cmd)
+  $c = Get-Command $Cmd -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+  if ($c) { return $c.Source }
+  return $null
+}
+
+# python --version の1行目を返す。コマンドが無ければ $null、実行できても何も返さなければ空文字。
+# （Microsoft Store のアプリ実行エイリアスが python を指していると、空文字になる）
+function Get-PythonVersionText {
+  $py = Resolve-Tool 'python'
+  if (-not $py) { return $null }
+  return "$(& $py --version 2>&1 | Select-Object -First 1)"
+}
+
+# node -v の1行目を返す。コマンドが無ければ $null。
+function Get-NodeVersionText {
+  $node = Resolve-Tool 'node'
+  if (-not $node) { return $null }
+  return "$(& $node -v 2>&1 | Select-Object -First 1)"
+}
+
+function Test-PythonVersion {
+  $t = Get-PythonVersionText
+  return ($t -and ($t -like $PythonPattern))
+}
+
+function Test-NodeVersion {
+  $t = Get-NodeVersionText
+  return ($t -and ($t -like $NodePattern))
+}
+
+# Python ライブラリ3種を読み込めるかどうかを返す。
+function Test-PyLibs {
+  $py = Resolve-Tool 'python'
+  if (-not $py) { return $false }
+  & $py -c $PyImportTest 2>&1 | Out-Null
+  return ($LASTEXITCODE -eq 0)
+}
+
+# LibreOffice の実行ファイルを探す（見つからなければ $null）。
+function Get-SofficeExe {
+  foreach ($c in $SofficeCandidates) {
+    if ($c -and (Test-Path -LiteralPath $c)) { return $c }
+  }
+  return $null
+}
+
+# Claude デスクトップアプリの実行ファイルを探し、そのパスを返す（見つからなければ $null）。
+# ※ インストール先を決め打ちできないため、既定の場所を見たあと、レジストリのアンインストール情報
+#    （DisplayIcon・InstallLocation）から実行ファイルの場所を引く。どちらもファイルの存在まで確認する。
+function Get-ClaudeDesktop {
+  $candidates = @(
+    (Join-Path $env:LOCALAPPDATA 'AnthropicClaude\claude.exe'),
+    (Join-Path $env:LOCALAPPDATA 'Programs\Claude\Claude.exe'),
+    (Join-Path $env:ProgramFiles  'Claude\Claude.exe')
+  )
+  foreach ($c in $candidates) {
+    if (Test-Path -LiteralPath $c) { return $c }
+  }
+
+  # レジストリのアンインストール情報（32bit 版の置き場所も見る）
+  $uninstallKeys = @(
+    'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall',
+    'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall',
+    'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall'
+  )
+  $entries = Get-ChildItem $uninstallKeys -ErrorAction SilentlyContinue |
+    ForEach-Object { Get-ItemProperty $_.PSPath -ErrorAction SilentlyContinue } |
+    Where-Object { $_.DisplayName -like 'Claude*' }
+
+  foreach ($e in $entries) {
+    # DisplayIcon は "C:\...\claude.exe,0" のようにアイコンの番号や引用符が付くことがあるため落とす
+    if ($e.DisplayIcon) {
+      $exe = ($e.DisplayIcon -replace ',.*$', '').Trim('"')
+      if ($exe -and (Test-Path -LiteralPath $exe)) { return $exe }
+    }
+    if ($e.InstallLocation) {
+      $exe = Join-Path $e.InstallLocation 'claude.exe'
+      if (Test-Path -LiteralPath $exe) { return $exe }
+    }
+  }
+  return $null
+}
+
+# winget でインストールする。Ids は上から順に試し、成功した時点で終了する
+# （パッケージIDは提供元の都合で変わることがあるため候補を複数持たせる）。
+# Probe には「入ったかどうかを判定するスクリプトブロック」を渡す。winget は
+# 「再起動が必要」「既にインストール済み」などでも 0 以外を返すため、終了コードだけで失敗と決めない。
+# Step には手順書の該当ステップ（B-1 等）を渡す。失敗時の案内に出す。
+function Install-WingetPackage {
+  param([string]$Name, [string[]]$Ids, [string]$Version, [scriptblock]$Probe, [string]$Step)
+
+  foreach ($id in $Ids) {
+    # ※ winget の画面出力を Out-Host に流す。そのままだと関数の戻り値に文字列が混ざり、
+    #    呼び出し側の if 判定が常に成立してしまう。
+    if ($Version) {
+      Write-Host "  winget install $id --version $Version を実行します。"
+      winget install --exact --id $id --version $Version --source winget --accept-package-agreements --accept-source-agreements --disable-interactivity | Out-Host
+    } else {
+      Write-Host "  winget install $id を実行します。"
+      winget install --exact --id $id --source winget --accept-package-agreements --accept-source-agreements --disable-interactivity | Out-Host
+    }
+    $code = $LASTEXITCODE
+
+    if ($code -eq 0) { return $true }
+
+    if ($Probe) {
+      Update-SessionPath
+      if ([bool](& $Probe)) {
+        Write-Host "  winget は終了コード $code を返しましたが、インストールは確認できました。"
+        return $true
+      }
+    }
+    Write-Host "  $id のインストールに失敗しました（終了コード $code）。" -ForegroundColor Yellow
+  }
+  Write-Host "[NG] $Name のインストールに失敗しました。手順書の $Step を実施してください。" -ForegroundColor Red
+  Write-Host "     $ContactNote"
+  return $false
+}
+
+# winget が扱えるバージョンの一覧から、指定したメジャーバージョンの最新を選ぶ。
+# （Node.js は「最新のLTS」を入れると 22 系にならないため、22 系の中の最新を明示して入れる）
+function Get-LatestVersionForMajor {
+  param([string]$Id, [string]$Major)
+  $list = winget show --exact --id $Id --versions --source winget --accept-source-agreements --disable-interactivity 2>$null
+  if (-not $list) { return $null }
+  $vers = $list | ForEach-Object { $_.Trim() } | Where-Object { $_ -match "^$Major\.\d+\.\d+$" }
+  if (-not $vers) { return $null }
+  return ($vers | Sort-Object { [version]$_ } -Descending | Select-Object -First 1)
+}
+
+# ===== 確認モード（-Check）: インストール状況を確認する（read-only）=====
+function Invoke-Check {
+  Update-SessionPath
+
+  Write-Host '=== インストール確認 ===' -ForegroundColor Cyan
+  Write-Host ''
+
+  $ng = 0
+
+  # Git for Windows
+  $git = Resolve-Tool 'git'
+  if ($git) {
+    Write-Host "[OK] Git for Windows: $(& $git --version 2>&1 | Select-Object -First 1)" -ForegroundColor Green
+  } else {
+    $ng++; Write-Host '[NG] Git for Windows: git コマンドが見つかりません（手順書の B-1）' -ForegroundColor Red
+  }
+
+  # Python（バージョンが 3.12 系かどうかまで見る）
+  $pv = Get-PythonVersionText
+  if ($null -eq $pv) {
+    $ng++; Write-Host '[NG] Python: python コマンドが見つかりません（手順書の B-2）' -ForegroundColor Red
+  } elseif (-not $pv) {
+    # 実行はできるのに何も返さない＝Microsoft Store のアプリ実行エイリアスを指している
+    $ng++
+    Write-Host '[NG] Python: バージョンが表示されません' -ForegroundColor Red
+    Write-Host '     Windows の「アプリ実行エイリアス」が Microsoft Store 版の python を指しています。'
+    Write-Host '     設定 → アプリ → アプリ実行エイリアス で python.exe・python3.exe をオフにしてください（手順書の B-2 の注記）。'
+  } elseif ($pv -like $PythonPattern) {
+    Write-Host "[OK] Python: $pv" -ForegroundColor Green
+  } else {
+    $ng++
+    Write-Host "[NG] Python: $pv（研修では $PythonVersion 系を使用します）" -ForegroundColor Red
+    Write-Host "     別のバージョンが先に見つかっています。$PythonVersion を入れ直しても表示は変わりません。$ContactNote"
+  }
+
+  # Python ライブラリ3種（読み込めるかどうかで確認する）
+  if ($null -eq $pv) {
+    # Python が無いと確認そのものができない。行を出さずに飛ばすと [NG] の件数が実態より少なくなる。
+    $ng++; Write-Host '[NG] Python ライブラリ: Python が見つからないため確認できません（手順書の B-2 → B-3）' -ForegroundColor Red
+  } elseif (Test-PyLibs) {
+    Write-Host "[OK] Python ライブラリ: $($PyLibs -join ' / ') を読み込めました" -ForegroundColor Green
+  } else {
+    $ng++; Write-Host "[NG] Python ライブラリ: $($PyLibs -join ' / ') のいずれかが読み込めません（手順書の B-3）" -ForegroundColor Red
+  }
+
+  # Node.js（バージョンが 22 系かどうかまで見る）
+  $nv = Get-NodeVersionText
+  if ($null -eq $nv) {
+    $ng++; Write-Host '[NG] Node.js: node コマンドが見つかりません（手順書の B-4）' -ForegroundColor Red
+  } elseif ($nv -like $NodePattern) {
+    Write-Host "[OK] Node.js: $nv" -ForegroundColor Green
+  } else {
+    $ng++
+    Write-Host "[NG] Node.js: $nv（研修では $NodeMajor 系を使用します）" -ForegroundColor Red
+    Write-Host "     別のバージョンが先に見つかっています。$ContactNote"
+  }
+
+  # npm（Node.js に同梱されるため個別の導入手順は無い。欠けていれば Node.js の入れ直しになる）
+  $npm = Resolve-Tool 'npm'
+  if ($npm) {
+    Write-Host "[OK] npm: $(& $npm -v 2>&1 | Select-Object -First 1)" -ForegroundColor Green
+  } else {
+    $ng++; Write-Host '[NG] npm: npm コマンドが見つかりません（Node.js に同梱されます。手順書の B-4 をやり直してください）' -ForegroundColor Red
+  }
+
+  # LibreOffice（画面付きアプリのため、起動せず実行ファイルのバージョン情報を読む）
+  $soffice = Get-SofficeExe
+  if ($soffice) {
+    Write-Host "[OK] LibreOffice: $((Get-Item -LiteralPath $soffice).VersionInfo.ProductVersion)" -ForegroundColor Green
+  } else {
+    $ng++; Write-Host '[NG] LibreOffice: soffice.exe が見つかりません（手順書の B-5）' -ForegroundColor Red
+  }
+
+  # Claude デスクトップアプリ
+  $claude = Get-ClaudeDesktop
+  if ($claude) {
+    Write-Host "[OK] Claude デスクトップアプリ: $claude" -ForegroundColor Green
+  } else {
+    $ng++; Write-Host '[NG] Claude デスクトップアプリ: インストールが確認できません（手順書の B-6）' -ForegroundColor Red
+  }
+
+  Write-Host ''
+  if ($ng -eq 0) {
+    Write-Host '=== 確認完了: すべて [OK] です ===' -ForegroundColor Green
+    Write-Host '続けて、手順書の「2. 動作確認（Git Bash）」を実施してください。'
+  } else {
+    Write-Host "=== 確認完了: [NG] が $ng 件あります ===" -ForegroundColor Red
+    Write-Host '[NG] の項目は、括弧内の手順（手順書の B-1〜B-6）を実施してから、もう一度この確認を実行してください。'
+    Write-Host "$ContactNote"
+  }
+}
+
+# ===== 実行モード: インストールする =====
+function Invoke-Setup {
+  if (-not (Resolve-Tool 'winget')) {
+    Write-Host '[ERROR] winget（Windows パッケージマネージャー）が見つかりません。' -ForegroundColor Red
+    Write-Host '手順書の「B. 手動で1つずつインストール」を実施してください。'
+    $script:SetupAborted = $true
+    return
+  }
+
+  # 1. Git for Windows（Claude デスクトップアプリより先に入れる）
+  Write-Host ''
+  Write-Host '=== Git for Windows のインストール ===' -ForegroundColor Cyan
+  Update-SessionPath
+  $git = Resolve-Tool 'git'
+  if ($git) {
+    Write-Host "→ 既にインストール済みのためスキップします。（$(& $git --version 2>&1 | Select-Object -First 1)）"
+  } else {
+    Install-WingetPackage -Name 'Git for Windows' -Ids @('Git.Git') -Probe { [bool](Resolve-Tool 'git') } -Step 'B-1' | Out-Null
+  }
+
+  # 2. Python 3.12
+  Write-Host ''
+  Write-Host "=== Python $PythonVersion のインストール ===" -ForegroundColor Cyan
+  Update-SessionPath
+  $pv = Get-PythonVersionText
+  if ($pv -and ($pv -like $PythonPattern)) {
+    Write-Host "→ 既にインストール済みのためスキップします。（$pv）"
+  } else {
+    if ($pv) {
+      Write-Host "→ $pv が入っていますが研修では $PythonVersion 系を使用するため、$PythonVersion を追加でインストールします。" -ForegroundColor Yellow
+      Write-Host '   ※ 追加で入れても python コマンドが指す先は変わらない場合があります。その場合は確認で [NG] が残ります。' -ForegroundColor Yellow
+    }
+    Install-WingetPackage -Name "Python $PythonVersion" -Ids @("Python.Python.$PythonVersion") -Probe { Test-PythonVersion } -Step 'B-2' | Out-Null
+  }
+
+  # 3. Python ライブラリ3種
+  Write-Host ''
+  Write-Host '=== Python ライブラリのインストール ===' -ForegroundColor Cyan
+  Update-SessionPath
+  $py = Resolve-Tool 'python'
+  if (-not $py) {
+    Write-Host '[NG] Python ライブラリ: python コマンドが見つからないためインストールできません（手順書の B-2 → B-3）' -ForegroundColor Red
+    Write-Host "     $ContactNote"
+  } elseif (Test-PyLibs) {
+    Write-Host "→ 既にインストール済みのためスキップします。（$($PyLibs -join ' / ')）"
+  } else {
+    Write-Host "  python -m pip install $($PyLibs -join ' ') を実行します。"
+    & $py -m pip install $PyLibs | Out-Host
+    # 終了コードだけで判断せず、実際に読み込めるかを見る
+    if (-not (Test-PyLibs)) {
+      Write-Host '[NG] Python ライブラリのインストールに失敗しました（手順書の B-3）' -ForegroundColor Red
+      Write-Host '     証明書のエラー（certificate verify failed）が出ている場合は社内ネットワークの制限が原因です。ネットワーク管理者に確認してください。'
+      Write-Host "     $ContactNote"
+    }
+  }
+
+  # 4. Node.js 22（「最新のLTS」だと 22 系にならないため、22 系の最新を明示して入れる）
+  Write-Host ''
+  Write-Host "=== Node.js $NodeMajor のインストール ===" -ForegroundColor Cyan
+  Update-SessionPath
+  $nv = Get-NodeVersionText
+  if ($nv -and ($nv -like $NodePattern)) {
+    Write-Host "→ 既にインストール済みのためスキップします。（$nv）"
+  } else {
+    if ($nv) {
+      Write-Host "→ $nv が入っていますが研修では $NodeMajor 系を使用するため、$NodeMajor を追加でインストールします。" -ForegroundColor Yellow
+    }
+    # 先に「どのパッケージIDの、どのバージョンを入れるか」を決めてから1回だけ実行する
+    # （IDごとにインストールを試すと、失敗時に [NG] が何行も出る）
+    $targetId  = $null
+    $targetVer = $null
+    foreach ($id in @('OpenJS.NodeJS.LTS', 'OpenJS.NodeJS')) {
+      $ver = Get-LatestVersionForMajor -Id $id -Major $NodeMajor
+      if ($ver) { $targetId = $id; $targetVer = $ver; break }
+    }
+    if (-not $targetId) {
+      Write-Host "[NG] Node.js $NodeMajor 系のバージョン一覧を winget から取得できませんでした。手順書の B-4 を実施してください。" -ForegroundColor Red
+      Write-Host "     $ContactNote"
+    } else {
+      Write-Host "  $targetId の $NodeMajor 系の最新版は $targetVer です。"
+      Install-WingetPackage -Name "Node.js $NodeMajor" -Ids @($targetId) -Version $targetVer -Probe { Test-NodeVersion } -Step 'B-4' | Out-Null
+    }
+  }
+
+  # 5. LibreOffice
+  Write-Host ''
+  Write-Host '=== LibreOffice のインストール ===' -ForegroundColor Cyan
+  $soffice = Get-SofficeExe
+  if ($soffice) {
+    Write-Host "→ 既にインストール済みのためスキップします。（$((Get-Item -LiteralPath $soffice).VersionInfo.ProductVersion)）"
+  } else {
+    Install-WingetPackage -Name 'LibreOffice' -Ids @('TheDocumentFoundation.LibreOffice') -Probe { [bool](Get-SofficeExe) } -Step 'B-5' | Out-Null
+  }
+
+  # 6. Claude デスクトップアプリ（Git for Windows のあとに入れる）
+  Write-Host ''
+  Write-Host '=== Claude デスクトップアプリのインストール ===' -ForegroundColor Cyan
+  if (Get-ClaudeDesktop) {
+    Write-Host '→ 既にインストール済みのためスキップします。'
+  } else {
+    $ok = Install-WingetPackage -Name 'Claude デスクトップアプリ' -Ids @('Anthropic.Claude', 'Anthropic.ClaudeDesktop') -Probe { [bool](Get-ClaudeDesktop) } -Step 'B-6'
+    if (-not $ok) {
+      Write-Host '     B-6 では https://claude.ai/download から Windows（x64）版をダウンロードしてインストールします。'
+    }
+  }
+
+  Write-Host ''
+  Write-Host '=== インストール完了 ===' -ForegroundColor Green
+  Write-Host 'このあとの「2. 動作確認（Git Bash）」は、Git Bash を新しく開いてから実施してください。' -ForegroundColor Yellow
+}
+
+# ===== エントリポイント =====
+if ($Check) {
+  Invoke-Check
+} else {
+  Write-Host 'これは「インストール実行」です。確認だけなら -Check を付けてください。' -ForegroundColor Yellow
+  Write-Host '管理者として実行した PowerShell で行ってください（インストールに管理者権限が必要です）。'
+  $ans = Read-Host 'インストールを実行しますか？ [y/N]'
+  if ($ans -ne 'y' -and $ans -ne 'Y') {
+    Write-Host '中止しました。もう一度実行するには同じコマンドを入力してください（確認のみは -Check を付けます）。'
+    return
+  }
+  Invoke-Setup
+
+  # インストールに続けて確認（-Check 相当）を自動実行する（read-only）
+  # ※ winget が無くて何もインストールしていない場合は、[NG] の羅列を出しても混乱するだけなので出さない。
+  if (-not $script:SetupAborted) {
+    Write-Host ''
+    Write-Host '続けて確認を行います（-Check と同じ内容）。' -ForegroundColor Cyan
+    Write-Host ''
+    Invoke-Check
+  }
+}
