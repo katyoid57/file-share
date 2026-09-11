@@ -301,7 +301,6 @@ function Invoke-Check {
   Write-Host ''
   if ($ng -eq 0) {
     Write-Host '=== 確認完了: すべて [OK] です ===' -ForegroundColor Green
-    Write-Host '続けて、手順書の「2. 動作確認（Git Bash）」を実施してください。'
   } else {
     Write-Host "=== 確認完了: [NG] が $ng 件あります ===" -ForegroundColor Red
     Write-Host '[NG] の項目は、括弧内の手順（手順書の B-1〜B-6）を実施してから、もう一度この確認を実行してください。'
@@ -429,8 +428,6 @@ if ($Check) {
   # インストールに続けて確認（-Check 相当）を自動実行する（read-only）
   # ※ winget が無くて何もインストールしていない場合は、[NG] の羅列を出しても混乱するだけなので出さない。
   if (-not $script:SetupAborted) {
-    Write-Host ''
-    Write-Host '続けて確認を行います（-Check と同じ内容）。' -ForegroundColor Cyan
     Write-Host ''
     Invoke-Check
   }

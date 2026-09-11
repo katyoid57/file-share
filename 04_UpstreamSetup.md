@@ -314,6 +314,28 @@ A ルートで進めた場合は、ここで **A-3** を実施して `setup.ps1`
 
 ---
 
+## 付録: 検証用のアンインストール
+
+手順書どおりに入るかを 1 台で試すとき、**入れたものを全部消して最初からやり直す**ためのスクリプトである。研修生の PC には使わない（研修終了後のクリーンアップは 06 を参照。あちらはツール本体を残す）。
+
+```powershell
+# ダウンロード
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/uninstall.ps1 -OutFile "$env:TEMP\uninstall.ps1"
+```
+
+```powershell
+# 実行（確認を聞かれるので y を入力して Enter を押す。確認のみは末尾に -Check を付ける）
+powershell -ExecutionPolicy Bypass -File "$env:TEMP\uninstall.ps1"
+```
+
+Claude デスクトップアプリ → LibreOffice → Node.js → Python 3.12 → Git for Windows の順（インストールと逆順）に削除し、続けて設定とキャッシュ（`%APPDATA%\Claude`・`%USERPROFILE%\.claude` 系・`%APPDATA%\LibreOffice`・`%APPDATA%\Python`・pip と npm のキャッシュ・`.bash_history`・`.gitconfig`）を消す。Python ライブラリ3種は Python 本体と一緒に消える。
+
+削除は winget で行い、winget で消せないものは「プログラムと機能」の登録（MSI の製品コード、または無人アンインストールのコマンド）から削除する。どちらもできないものは名前を表示するので、**設定 → アプリ**から手動で削除する。
+
+> **重要:** 実行後は PowerShell を閉じて開き直す。PATH の変更が反映されないまま `setup.ps1` を実行すると、消したはずのツールが見つかったように見える。
+
+---
+
 ## この後の手順
 
 PC の準備はここまでである。**A-2 または B-7 の点検がすべて `[OK]` になり、上の起動確認も通ってから受講者に渡すこと。** 続きは以下で行う。
