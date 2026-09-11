@@ -47,11 +47,11 @@ winget --version
 
 #### ✅ A. スクリプトで一括インストール（推奨）
 
-##### A-1. setup.ps1 で一括インストール
+##### A-1. setup-upstream.ps1 で一括インストール
 
 ```powershell
 # ダウンロード（TEMP に保存。作業フォルダの権限に依存しない）
-Invoke-WebRequest -Uri https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/setup.ps1 -OutFile "$env:TEMP\setup.ps1"
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/setup-upstream.ps1 -OutFile "$env:TEMP\setup-upstream.ps1"
 ```
 
 > **補足:** `アクセスが拒否されました` と出る場合は、保存先フォルダの書き込み権限が原因である。`$env:TEMP` に保存すれば回避できる。
@@ -60,7 +60,7 @@ Invoke-WebRequest -Uri https://raw.githubusercontent.com/katyoid57/file-share/ma
 
 ```powershell
 # 実行（確認を聞かれるので y を入力して Enter を押す）
-powershell -ExecutionPolicy Bypass -File "$env:TEMP\setup.ps1"
+powershell -ExecutionPolicy Bypass -File "$env:TEMP\setup-upstream.ps1"
 ```
 
 > `インストールを実行しますか？ [y/N]` と表示されたら、`y` を入力して `Enter` を押す。`Enter` だけを押すと `中止しました` となって何も行われないので、その場合は上のコマンドをもう一度実行する。
@@ -89,13 +89,13 @@ Git for Windows・Python 3.12・Python ライブラリ3種・Node.js 22・LibreO
 > === 確認完了: すべて [OK] です ===
 > ```
 
-##### A-2. setup.ps1 -Check でインストール確認
+##### A-2. setup-upstream.ps1 -Check でインストール確認
 
 A-1 の最後に出た確認をもう一度実行したいときは、以下を実行する。
 
 ```powershell
 # 確認（-Check は確認のみ。インストールは行わない。何度実行しても安全）
-powershell -ExecutionPolicy Bypass -File "$env:TEMP\setup.ps1" -Check
+powershell -ExecutionPolicy Bypass -File "$env:TEMP\setup-upstream.ps1" -Check
 ```
 
 > 各項目に `[OK]` が表示されていればインストール完了。この確認はスクリプトが PATH（コマンドの探し先の一覧）を読み直してから判定するため、**PowerShell を開き直さずにそのまま実行してよい**。
@@ -110,7 +110,7 @@ powershell -ExecutionPolicy Bypass -File "$env:TEMP\setup.ps1" -Check
 
 ```powershell
 # 後片付け
-Remove-Item "$env:TEMP\setup.ps1" -ErrorAction SilentlyContinue
+Remove-Item "$env:TEMP\setup-upstream.ps1" -ErrorAction SilentlyContinue
 ```
 
 > 削除したあとで確認し直したくなった場合は、A-1 のダウンロードのコマンドから実行すれば元に戻せる。
@@ -310,7 +310,7 @@ curl -s -o /dev/null -w "Claude.ai: %{http_code}\n" https://claude.ai
 
 #### 後片付け
 
-A ルートで進めた場合は、ここで **A-3** を実施して `setup.ps1` を削除する。
+A ルートで進めた場合は、ここで **A-3** を実施して `setup-upstream.ps1` を削除する。
 
 ---
 
@@ -320,12 +320,12 @@ A ルートで進めた場合は、ここで **A-3** を実施して `setup.ps1`
 
 ```powershell
 # ダウンロード
-Invoke-WebRequest -Uri https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/uninstall.ps1 -OutFile "$env:TEMP\uninstall.ps1"
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/uninstall-upstream.ps1 -OutFile "$env:TEMP\uninstall-upstream.ps1"
 ```
 
 ```powershell
 # 実行（確認を聞かれるので y を入力して Enter を押す。確認のみは末尾に -Check を付ける）
-powershell -ExecutionPolicy Bypass -File "$env:TEMP\uninstall.ps1"
+powershell -ExecutionPolicy Bypass -File "$env:TEMP\uninstall-upstream.ps1"
 ```
 
 Claude デスクトップアプリ → LibreOffice → Node.js → Python 3.12 → Git for Windows の順（インストールと逆順）に削除し、続けて設定とキャッシュ（`%APPDATA%\Claude`・`%USERPROFILE%\.claude` 系・`%APPDATA%\LibreOffice`・`%APPDATA%\Python`・pip と npm のキャッシュ・`.bash_history`・`.gitconfig`）を消す。Python ライブラリ3種は Python 本体と一緒に消える。
@@ -334,7 +334,7 @@ Claude デスクトップアプリ → LibreOffice → Node.js → Python 3.12 �
 
 > **LibreOffice の削除には数分かかる。** その間、画面には何も出ない。止まったように見えても待つこと。
 
-> **重要:** 実行後は PowerShell を閉じて開き直す。PATH の変更が反映されないまま `setup.ps1` を実行すると、消したはずのツールが見つかったように見える。
+> **重要:** 実行後は PowerShell を閉じて開き直す。PATH の変更が反映されないまま `setup-upstream.ps1` を実行すると、消したはずのツールが見つかったように見える。
 
 ---
 

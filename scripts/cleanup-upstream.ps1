@@ -16,7 +16,7 @@ $ErrorActionPreference = 'Continue'
 
 # Claude デスクトップアプリがユーザーデータを置くフォルダ。
 # ※ %LOCALAPPDATA%\AnthropicClaude と %LOCALAPPDATA%\Claude は「アプリ本体の置き場」でもある（04 の
-#    setup.ps1 が実行ファイルを探す先）。ツリーごと消すと本体を壊すため、直下のデータ用サブフォルダ
+#    setup-upstream.ps1 が実行ファイルを探す先）。ツリーごと消すと本体を壊すため、直下のデータ用サブフォルダ
 #    だけを消す。どのフォルダができるかは実機で確認していないので、あるものだけを消す。
 $ClaudeAppRoots = @(
   "$env:LOCALAPPDATA\AnthropicClaude",

@@ -1,6 +1,6 @@
 ﻿# 研修環境セットアップ（Windows側・上流工程研修）
-# 実行: powershell -ExecutionPolicy Bypass -File .\setup.ps1          … インストールを行い、完了後に確認（-Check 相当）も自動実行する
-# 確認: powershell -ExecutionPolicy Bypass -File .\setup.ps1 -Check   … 確認のみ（read-only。何度でも安全に実行可）
+# 実行: powershell -ExecutionPolicy Bypass -File .\setup-upstream.ps1          … インストールを行い、完了後に確認（-Check 相当）も自動実行する
+# 確認: powershell -ExecutionPolicy Bypass -File .\setup-upstream.ps1 -Check   … 確認のみ（read-only。何度でも安全に実行可）
 #   Git for Windows → Python 3.12 → Python ライブラリ3種 → Node.js 22 → LibreOffice → Claude デスクトップアプリ
 #   の順にインストールする。インストール済みのものは自動でスキップする。
 #   ※ Git for Windows は Claude デスクトップアプリの Code タブが動くための必須条件のため、アプリより先に入れる。

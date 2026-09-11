@@ -1,7 +1,7 @@
 ﻿# 研修環境のアンインストール（Windows側・上流工程研修・検証用）
-# 実行: powershell -ExecutionPolicy Bypass -File .\uninstall.ps1          … アンインストールし、完了後に確認（-Check 相当）も自動実行する
-# 確認: powershell -ExecutionPolicy Bypass -File .\uninstall.ps1 -Check   … 確認のみ（read-only。何度でも安全に実行可）
-#   setup.ps1 で入れた6つ（Claude デスクトップアプリ・LibreOffice・Node.js・Python・Python ライブラリ・
+# 実行: powershell -ExecutionPolicy Bypass -File .\uninstall-upstream.ps1          … アンインストールし、完了後に確認（-Check 相当）も自動実行する
+# 確認: powershell -ExecutionPolicy Bypass -File .\uninstall-upstream.ps1 -Check   … 確認のみ（read-only。何度でも安全に実行可）
+#   setup-upstream.ps1 で入れた6つ（Claude デスクトップアプリ・LibreOffice・Node.js・Python・Python ライブラリ・
 #   Git for Windows）を削除し、設定とキャッシュも消して、何も入っていない状態に戻す。
 #   セットアップを最初からやり直して検証するための道具であり、研修生の PC には使わない。
 #   ※ 研修終了後の返却前クリーンアップは cleanup-upstream.ps1（ツール本体は残す）を使う。
@@ -147,7 +147,7 @@ function Invoke-Check {
 
   Write-Host ''
   if ($left -eq 0) {
-    Write-Host '=== 確認完了: すべて削除済みです。setup.ps1 を最初から実行できます ===' -ForegroundColor Green
+    Write-Host '=== 確認完了: すべて削除済みです。setup-upstream.ps1 を最初から実行できます ===' -ForegroundColor Green
   } else {
     Write-Host "=== 確認完了: $left 件残っています ===" -ForegroundColor Red
     Write-Host 'アプリが起動しているとアンインストールできません。終了してから、もう一度実行してください。'
