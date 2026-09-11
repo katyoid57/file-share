@@ -134,17 +134,23 @@ function Get-ClaudeDesktop {
 # 「再起動が必要」「既にインストール済み」などでも 0 以外を返すため、終了コードだけで失敗と決めない。
 # Step には手順書の該当ステップ（B-1 等）を渡す。失敗時の案内に出す。
 function Install-WingetPackage {
-  param([string]$Name, [string[]]$Ids, [string]$Version, [scriptblock]$Probe, [string]$Step)
+  param([string]$Name, [string[]]$Ids, [string]$Version, [scriptblock]$Probe, [string]$Step, [switch]$SkipDependencies)
 
   foreach ($id in $Ids) {
+    # 依存パッケージを入れない指定。社内PCではアプリの導入に申請が要るため、研修で要らないものを
+    # 巻き込まない。LibreOffice は winget のパッケージ定義が Microsoft.VCRedist.2015+.x64 を
+    # 依存として宣言しているので、これを付けないと VC++ ランタイムまで入る。
+    $extra = @()
+    if ($SkipDependencies) { $extra += '--skip-dependencies' }
+
     # ※ winget の画面出力を Out-Host に流す。そのままだと関数の戻り値に文字列が混ざり、
     #    呼び出し側の if 判定が常に成立してしまう。
     if ($Version) {
       Write-Host "  winget install $id --version $Version を実行します。"
-      winget install --exact --id $id --version $Version --source winget --accept-package-agreements --accept-source-agreements --disable-interactivity | Out-Host
+      winget install --exact --id $id --version $Version --source winget --accept-package-agreements --accept-source-agreements --disable-interactivity @extra | Out-Host
     } else {
       Write-Host "  winget install $id を実行します。"
-      winget install --exact --id $id --source winget --accept-package-agreements --accept-source-agreements --disable-interactivity | Out-Host
+      winget install --exact --id $id --source winget --accept-package-agreements --accept-source-agreements --disable-interactivity @extra | Out-Host
     }
     $code = $LASTEXITCODE
 
@@ -358,7 +364,9 @@ function Invoke-Setup {
   if ($soffice) {
     Write-Host "→ 既にインストール済みのためスキップします。（$((Get-Item -LiteralPath $soffice).VersionInfo.ProductVersion)）"
   } else {
-    Install-WingetPackage -Name 'LibreOffice' -Ids @('TheDocumentFoundation.LibreOffice') -Probe { [bool](Get-SofficeExe) } -Step 'B-5' | Out-Null
+    # -SkipDependencies: VC++ 再頒布可能パッケージを一緒に入れない（導入には申請が要るため）。
+    # LibreOffice が起動しない場合だけ、手順書の指示に従って別途申請して入れる。
+    Install-WingetPackage -Name 'LibreOffice' -Ids @('TheDocumentFoundation.LibreOffice') -Probe { [bool](Get-SofficeExe) } -Step 'B-5' -SkipDependencies | Out-Null
   }
 
   # 6. Claude デスクトップアプリ（Git for Windows のあとに入れる）

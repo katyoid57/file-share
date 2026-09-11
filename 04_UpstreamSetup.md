@@ -69,6 +69,12 @@ powershell -ExecutionPolicy Bypass -File "$env:TEMP\setup.ps1"
 
 Git for Windows・Python 3.12・Python ライブラリ3種・Node.js 22・LibreOffice・Claude デスクトップアプリの順にインストールされる。インストール済みのものは自動でスキップされる。途中で失敗した場合は、もう一度同じコマンドを実行すると成功済みのものはスキップされる。
 
+> **研修に要らないものは入れない。** このスクリプトは、winget が入れようとする依存パッケージを飛ばす指定（`--skip-dependencies`）を LibreOffice に付けている。winget の LibreOffice のパッケージ定義は **Microsoft Visual C++ 再頒布可能パッケージ**（`Microsoft.VCRedist.2015+.x64`）を依存として宣言しているため、これを付けないとそちらまで入る（社内PCではアプリの導入に申請が必要なため、巻き込まないようにしている）。
+>
+> LibreOffice が起動しない場合に限り、このランタイムが要る。判断は「画面付きアプリの起動確認」で行う。
+>
+> **Node.js のインストーラーが出す Tools for Native Modules**（Chocolatey・Python・Visual Studio Build Tools を入れる任意の追加機能。数 GB）は**研修では使わないのでキャンセルしてよい**。これをキャンセルしても Node.js 本体は入る。
+
 インストールが終わると、**続けて確認（A-2 と同じ内容）が自動で実行される**。
 
 > **結果例**（末尾の部分）
@@ -186,6 +192,8 @@ python -c "import docx, openpyxl, pptx"
 2. 一覧から **`node-v22.x.x-x64.msi`** をダウンロードする（研修用 PC は `x64` である。自分の PC の種類は **設定 → システム → バージョン情報 → システムの種類** で確認できる）
 3. インストーラーを実行する。選択肢は既定のまま進める
 
+> **注意:** 途中の **Tools for Native Modules** の画面では、**チェックを入れない**こと（Chocolatey・Python・Visual Studio Build Tools を追加で入れる任意の機能で、数 GB かかる。研修では使わない）。チェックを入れてしまった場合は、インストール後に開く黒いウィンドウを閉じてよい。Node.js 本体は入っている。
+
 PowerShell を閉じて、管理者として開き直してから確認する。
 
 ```powershell
@@ -208,6 +216,8 @@ Claude が作った Word・Excel・スライドを開いて確認するために
 
 1. https://www.libreoffice.org/download/download-libreoffice/ を開き、Windows 版をダウンロードする
 2. インストーラーを実行する。選択肢は既定のまま進める
+
+> 公式サイトのインストーラーは、winget のような依存パッケージの追加インストールを行わない。**Microsoft Visual C++ 再頒布可能パッケージ**を別途求められることは通常ない。
 
 > 起動できることはこのあとの「2. 動作確認（Git Bash）」で確認する。配布フォルダのサンプルを開く確認は、受講者が [05_UpstreamAccountSetup.md](05_UpstreamAccountSetup.md) の「5. LibreOffice でファイルを開く」で行う。
 
@@ -291,6 +301,7 @@ curl -s -o /dev/null -w "Claude.ai: %{http_code}\n" https://claude.ai
 コマンドで確認できない2つは、実際に起動して確かめる。
 
 1. スタートメニューから **「LibreOffice」** を起動し、スタートセンターの画面が出たら閉じる
+   - 起動せず、`VCRUNTIME140.dll が見つかりません` のようなエラーが出る場合は、**Microsoft Visual C++ 再頒布可能パッケージ**（`Microsoft.VCRedist.2015+.x64`）が必要である。社内の申請を経てから `winget install --exact --id Microsoft.VCRedist.2015+.x64` で導入する
 2. スタートメニューから **「Claude」** を起動し、**サインイン画面が表示される**ことを確認したら閉じる（サインインは受講者が行うため、ここではしない）
 
 > Claude デスクトップアプリが起動しない場合は B-6 を、LibreOffice が起動しない場合は B-5 をやり直す。
