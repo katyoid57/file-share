@@ -4,7 +4,7 @@
 
 - VSCode利用申請
 - GitHubアカウント作成（セットアップ後でも可）
-- ClaudeCodeアカウント作成（セットアップ後でも可）
+- Claude アカウント作成（セットアップ後でも可）
 - GitHub Copilot契約
 
 ---
