@@ -73,7 +73,7 @@ Git for Windows・Python 3.12・Python ライブラリ3種・Node.js 22・LibreO
 >
 > LibreOffice が起動しない場合に限り、このランタイムが要る。判断は「画面付きアプリの起動確認」で行う。
 >
-> **Node.js のインストーラーが出す Tools for Native Modules**（Chocolatey・Python・Visual Studio Build Tools を入れる任意の追加機能。数 GB）は**研修では使わないのでキャンセルしてよい**。これをキャンセルしても Node.js 本体は入る。
+> **このルートでは、キャンセルが必要な画面は出ない想定である。** 見覚えのないインストール画面が出た場合は、進める前に APD GrowthTech推進部（この手順書の管理者）へ確認すること。
 
 インストールが終わると、**続けて確認（A-2 と同じ内容）が自動で実行される**。
 
@@ -192,7 +192,7 @@ python -c "import docx, openpyxl, pptx"
 2. 一覧から **`node-v22.x.x-x64.msi`** をダウンロードする（研修用 PC は `x64` である。自分の PC の種類は **設定 → システム → バージョン情報 → システムの種類** で確認できる）
 3. インストーラーを実行する。選択肢は既定のまま進める
 
-> **注意:** 途中の **Tools for Native Modules** の画面では、**チェックを入れない**こと（Chocolatey・Python・Visual Studio Build Tools を追加で入れる任意の機能で、数 GB かかる。研修では使わない）。チェックを入れてしまった場合は、インストール後に開く黒いウィンドウを閉じてよい。Node.js 本体は入っている。
+> **注意:** 途中に **Tools for Native Modules**（`Automatically install the necessary tools...`）というチェックボックスの画面がある。**既定でオフなので、そのまま次へ進む**こと。ここにチェックを入れると、Chocolatey・Python・Visual Studio Build Tools を追加で入れにいき、数 GB かかる。研修では使わない。
 
 PowerShell を閉じて、管理者として開き直してから確認する。
 
