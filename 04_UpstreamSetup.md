@@ -69,6 +69,8 @@ powershell -ExecutionPolicy Bypass -File "$env:TEMP\setup.ps1"
 
 Git for Windows・Python 3.12・Python ライブラリ3種・Node.js 22・LibreOffice・Claude デスクトップアプリの順にインストールされる。インストール済みのものは自動でスキップされる。途中で失敗した場合は、もう一度同じコマンドを実行すると成功済みのものはスキップされる。
 
+> **Node.js だけは winget を使わない。** winget が返すバージョンの一覧は新しい順に約38件で打ち切られ、`OpenJS.NodeJS.LTS` は 24 系しか持たないため、22 系を指定する手段がない（実機で確認）。スクリプトは公式サイト（`https://nodejs.org/dist/latest-v22.x/`）から MSI を取得して無人インストールする。B-4 と同じものを自動で行っているだけである。
+
 > **研修に要らないものは入れない。** このスクリプトは、winget が入れようとする依存パッケージを飛ばす指定（`--skip-dependencies`）を LibreOffice に付けている。winget の LibreOffice のパッケージ定義は **Microsoft Visual C++ 再頒布可能パッケージ**（`Microsoft.VCRedist.2015+.x64`）を依存として宣言しているため、これを付けないとそちらまで入る（社内PCではアプリの導入に申請が必要なため、巻き込まないようにしている）。
 >
 > LibreOffice が起動しない場合に限り、このランタイムが要る。判断は「画面付きアプリの起動確認」で行う。

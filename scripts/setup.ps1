@@ -170,15 +170,48 @@ function Install-WingetPackage {
   return $false
 }
 
-# winget が扱えるバージョンの一覧から、指定したメジャーバージョンの最新を選ぶ。
-# （Node.js は「最新のLTS」を入れると 22 系にならないため、22 系の中の最新を明示して入れる）
-function Get-LatestVersionForMajor {
-  param([string]$Id, [string]$Major)
-  $list = winget show --exact --id $Id --versions --source winget --accept-source-agreements --disable-interactivity 2>$null
-  if (-not $list) { return $null }
-  $vers = $list | ForEach-Object { $_.Trim() } | Where-Object { $_ -match "^$Major\.\d+\.\d+$" }
-  if (-not $vers) { return $null }
-  return ($vers | Sort-Object { [version]$_ } -Descending | Select-Object -First 1)
+# 公式サイトから Node.js の指定メジャーバージョンの MSI を取得して無人インストールする。
+# winget のバージョン一覧は LTS の移動や件数の打ち切りで 22 系を拾えないことがあるため、
+# こちらを確実な経路として用意する（手順書の B-4 と同じものを自動で行う）。
+function Install-NodeFromOfficialSite {
+  param([string]$Major)
+
+  $indexUrl = "https://nodejs.org/dist/latest-v$Major.x/"
+  Write-Host "  $indexUrl から $Major 系の最新版を探します。"
+  try {
+    $page = Invoke-WebRequest -Uri $indexUrl -UseBasicParsing -ErrorAction Stop
+  } catch {
+    Write-Host "  一覧を取得できませんでした: $($_.Exception.Message)" -ForegroundColor Yellow
+    return $false
+  }
+
+  $m = [regex]::Match("$($page.Content)", "node-v$Major\.\d+\.\d+-x64\.msi")
+  if (-not $m.Success) {
+    Write-Host '  x64 の MSI が見つかりませんでした。' -ForegroundColor Yellow
+    return $false
+  }
+
+  $file = $m.Value
+  $msi  = Join-Path $env:TEMP $file
+  Write-Host "  $file をダウンロードします。"
+  try {
+    Invoke-WebRequest -Uri ($indexUrl + $file) -OutFile $msi -UseBasicParsing -ErrorAction Stop
+  } catch {
+    Write-Host "  ダウンロードに失敗しました: $($_.Exception.Message)" -ForegroundColor Yellow
+    return $false
+  }
+
+  # /qn は無人インストール。任意機能（Tools for Native Modules）は選ばれない。
+  Write-Host '  インストールします（画面は出ません）。'
+  $proc = Start-Process msiexec.exe -ArgumentList @('/i', "\"$msi\"", '/qn', '/norestart') -Wait -PassThru
+  Remove-Item -LiteralPath $msi -Force -ErrorAction SilentlyContinue
+
+  # 3010 は「成功したが再起動が必要」
+  if ($proc.ExitCode -ne 0 -and $proc.ExitCode -ne 3010) {
+    Write-Host "  msiexec が終了コード $($proc.ExitCode) を返しました。" -ForegroundColor Yellow
+  }
+  Update-SessionPath
+  return (Test-NodeVersion)
 }
 
 # ===== 確認モード（-Check）: インストール状況を確認する（read-only）=====
@@ -329,7 +362,7 @@ function Invoke-Setup {
     }
   }
 
-  # 4. Node.js 22（「最新のLTS」だと 22 系にならないため、22 系の最新を明示して入れる）
+  # 4. Node.js 22（winget には 22 系が無いため、公式サイトの MSI を無人インストールする）
   Write-Host ''
   Write-Host "=== Node.js $NodeMajor のインストール ===" -ForegroundColor Cyan
   Update-SessionPath
@@ -340,20 +373,11 @@ function Invoke-Setup {
     if ($nv) {
       Write-Host "→ $nv が入っていますが研修では $NodeMajor 系を使用するため、$NodeMajor を追加でインストールします。" -ForegroundColor Yellow
     }
-    # 先に「どのパッケージIDの、どのバージョンを入れるか」を決めてから1回だけ実行する
-    # （IDごとにインストールを試すと、失敗時に [NG] が何行も出る）
-    $targetId  = $null
-    $targetVer = $null
-    foreach ($id in @('OpenJS.NodeJS.LTS', 'OpenJS.NodeJS')) {
-      $ver = Get-LatestVersionForMajor -Id $id -Major $NodeMajor
-      if ($ver) { $targetId = $id; $targetVer = $ver; break }
-    }
-    if (-not $targetId) {
-      Write-Host "[NG] Node.js $NodeMajor 系のバージョン一覧を winget から取得できませんでした。手順書の B-4 を実施してください。" -ForegroundColor Red
+    # winget は使わない。winget のバージョン一覧は新しい順に約38件で打ち切られ、
+    # OpenJS.NodeJS.LTS は 24 系しか持たないため、22 系を指定する手段が無い（実機で確認）。
+    if (-not (Install-NodeFromOfficialSite -Major $NodeMajor)) {
+      Write-Host "[NG] Node.js $NodeMajor 系のインストールに失敗しました。手順書の B-4 を実施してください。" -ForegroundColor Red
       Write-Host "     $ContactNote"
-    } else {
-      Write-Host "  $targetId の $NodeMajor 系の最新版は $targetVer です。"
-      Install-WingetPackage -Name "Node.js $NodeMajor" -Ids @($targetId) -Version $targetVer -Probe { Test-NodeVersion } -Step 'B-4' | Out-Null
     }
   }
 
