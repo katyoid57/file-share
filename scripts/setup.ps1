@@ -203,7 +203,10 @@ function Install-NodeFromOfficialSite {
 
   # /qn は無人インストール。任意機能（Tools for Native Modules）は選ばれない。
   Write-Host '  インストールします（画面は出ません）。'
-  $proc = Start-Process msiexec.exe -ArgumentList @('/i', "\"$msi\"", '/qn', '/norestart') -Wait -PassThru
+  # ※ PowerShell では二重引用符の中の引用符はバッククォートで escape する（\" は無効）。
+  #    パスに空白が含まれても壊れないよう、引数は1本の文字列にして引用符で囲む。
+  $msiArgs = "/i `"$msi`" /qn /norestart"
+  $proc = Start-Process msiexec.exe -ArgumentList $msiArgs -Wait -PassThru
   Remove-Item -LiteralPath $msi -Force -ErrorAction SilentlyContinue
 
   # 3010 は「成功したが再起動が必要」
