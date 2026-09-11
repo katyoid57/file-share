@@ -65,6 +65,31 @@ function Get-NodeVersionText {
   return "$(& $node -v 2>&1 | Select-Object -First 1)"
 }
 
+# 条件が満たされるまで待つ（インストーラーが終了したあとも展開が続くアプリのため）。
+function Wait-Until {
+  param([scriptblock]$Condition, [int]$Seconds = 60)
+  $deadline = (Get-Date).AddSeconds($Seconds)
+  while ((Get-Date) -lt $deadline) {
+    Update-SessionPath
+    if ([bool](& $Condition)) { return $true }
+    Start-Sleep -Seconds 3
+  }
+  return $false
+}
+
+# python コマンドの状態を返す。
+#   missing … コマンドが無い
+#   ok      … 研修で使うバージョン
+#   other   … 別のバージョンが先に見つかる
+#   alias   … Microsoft Store のアプリ実行エイリアス（--version がバージョンを返さない）
+function Get-PythonState {
+  $t = Get-PythonVersionText
+  if ($null -eq $t) { return 'missing' }
+  if ($t -like $PythonPattern) { return 'ok' }
+  if ($t -match '^Python \d') { return 'other' }
+  return 'alias'
+}
+
 function Test-PythonVersion {
   $t = Get-PythonVersionText
   return ($t -and ($t -like $PythonPattern))
@@ -236,24 +261,28 @@ function Invoke-Check {
 
   # Python（バージョンが 3.12 系かどうかまで見る）
   $pv = Get-PythonVersionText
-  if ($null -eq $pv) {
-    $ng++; Write-Host '[NG] Python: python コマンドが見つかりません（手順書の B-2）' -ForegroundColor Red
-  } elseif (-not $pv) {
-    # 実行はできるのに何も返さない＝Microsoft Store のアプリ実行エイリアスを指している
-    $ng++
-    Write-Host '[NG] Python: バージョンが表示されません' -ForegroundColor Red
-    Write-Host '     Windows の「アプリ実行エイリアス」が Microsoft Store 版の python を指しています。'
-    Write-Host '     設定 → アプリ → アプリ実行エイリアス で python.exe・python3.exe をオフにしてください（手順書の B-2 の注記）。'
-  } elseif ($pv -like $PythonPattern) {
-    Write-Host "[OK] Python: $pv" -ForegroundColor Green
-  } else {
-    $ng++
-    Write-Host "[NG] Python: $pv（研修では $PythonVersion 系を使用します）" -ForegroundColor Red
-    Write-Host "     別のバージョンが先に見つかっています。$PythonVersion を入れ直しても表示は変わりません。$ContactNote"
+  switch (Get-PythonState) {
+    'ok' {
+      Write-Host "[OK] Python: $pv" -ForegroundColor Green
+    }
+    'missing' {
+      $ng++; Write-Host '[NG] Python: python コマンドが見つかりません（手順書の B-2）' -ForegroundColor Red
+    }
+    'other' {
+      $ng++
+      Write-Host "[NG] Python: $pv（研修では $PythonVersion 系を使用します）" -ForegroundColor Red
+      Write-Host "     別のバージョンが先に見つかっています。$PythonVersion を入れ直しても表示は変わりません。$ContactNote"
+    }
+    default {
+      # Microsoft Store のアプリ実行エイリアス。--version がバージョンではなく案内文を返す
+      $ng++
+      Write-Host '[NG] Python: python コマンドが Microsoft Store のアプリ実行エイリアスを指しています' -ForegroundColor Red
+      Write-Host '     設定 → アプリ → アプリ実行エイリアス で python.exe・python3.exe をオフにしてください（手順書の B-2 の注記）。'
+    }
   }
 
   # Python ライブラリ3種（読み込めるかどうかで確認する）
-  if ($null -eq $pv) {
+  if ((Get-PythonState) -eq 'missing') {
     # Python が無いと確認そのものができない。行を出さずに飛ばすと [NG] の件数が実態より少なくなる。
     $ng++; Write-Host '[NG] Python ライブラリ: Python が見つからないため確認できません（手順書の B-2 → B-3）' -ForegroundColor Red
   } elseif (Test-PyLibs) {
@@ -333,12 +362,15 @@ function Invoke-Setup {
   Write-Host "=== Python $PythonVersion のインストール ===" -ForegroundColor Cyan
   Update-SessionPath
   $pv = Get-PythonVersionText
-  if ($pv -and ($pv -like $PythonPattern)) {
+  $pyState = Get-PythonState
+  if ($pyState -eq 'ok') {
     Write-Host "→ 既にインストール済みのためスキップします。（$pv）"
   } else {
-    if ($pv) {
+    if ($pyState -eq 'other') {
       Write-Host "→ $pv が入っていますが研修では $PythonVersion 系を使用するため、$PythonVersion を追加でインストールします。" -ForegroundColor Yellow
       Write-Host '   ※ 追加で入れても python コマンドが指す先は変わらない場合があります。その場合は確認で [NG] が残ります。' -ForegroundColor Yellow
+    } elseif ($pyState -eq 'alias') {
+      Write-Host "→ python コマンドが Microsoft Store のアプリ実行エイリアスを指しています。$PythonVersion をインストールします。" -ForegroundColor Yellow
     }
     Install-WingetPackage -Name "Python $PythonVersion" -Ids @("Python.Python.$PythonVersion") -Probe { Test-PythonVersion } -Step 'B-2' | Out-Null
   }
@@ -402,7 +434,13 @@ function Invoke-Setup {
     Write-Host '→ 既にインストール済みのためスキップします。'
   } else {
     $ok = Install-WingetPackage -Name 'Claude デスクトップアプリ' -Ids @('Anthropic.Claude', 'Anthropic.ClaudeDesktop') -Probe { [bool](Get-ClaudeDesktop) } -Step 'B-6'
-    if (-not $ok) {
+    if ($ok) {
+      # インストーラーが終了したあとも展開が続き、直後の確認では実行ファイルが見つからないことがある
+      Write-Host '  展開が終わるのを待っています（最大90秒）。'
+      if (-not (Wait-Until { [bool](Get-ClaudeDesktop) } 90)) {
+        Write-Host '  実行ファイルをまだ確認できません。しばらく待ってから -Check で確認してください。' -ForegroundColor Yellow
+      }
+    } else {
       Write-Host '     B-6 では https://claude.ai/download から Windows（x64）版をダウンロードしてインストールします。'
     }
   }

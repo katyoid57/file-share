@@ -178,6 +178,7 @@ function Invoke-Uninstall {
       continue
     }
 
+    Write-Host '  削除しています。画面が止まって見えても待つこと（LibreOffice は数分かかることがある）。'
     Uninstall-ByWinget -Ids $app.Ids
     Update-SessionPath
     if ([bool](& $app.Probe)) {
