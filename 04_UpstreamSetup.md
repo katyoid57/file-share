@@ -54,11 +54,6 @@ winget --version
 Invoke-WebRequest -Uri https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/setup.ps1 -OutFile "$env:TEMP\setup.ps1"
 ```
 
-```powershell
-# ダウンロードできたか確認（ファイルのサイズと日時が表示されれば成功）
-Get-Item "$env:TEMP\setup.ps1"
-```
-
 > **補足:** `アクセスが拒否されました` と出る場合は、保存先フォルダの書き込み権限が原因である。`$env:TEMP` に保存すれば回避できる。
 >
 > **ダウンロード自体が失敗する場合**（応答が返らない、証明書や接続のエラーが出る）は、社内ネットワークの制限が原因である。ネットワーク管理者に確認すること。

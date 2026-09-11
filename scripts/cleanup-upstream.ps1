@@ -14,12 +14,10 @@ param([switch]$Check)
 
 $ErrorActionPreference = 'Continue'
 
-# 削除対象。Name は表示名、Paths は中身ごと消すフォルダ・ファイル。
-# ※ Claude デスクトップアプリと Claude Code の保存先は実機で確認していない。存在するものだけを消す作りにしてある。
 # Claude デスクトップアプリがユーザーデータを置くフォルダ。
 # ※ %LOCALAPPDATA%\AnthropicClaude と %LOCALAPPDATA%\Claude は「アプリ本体の置き場」でもある（04 の
-#    Get-ClaudeDesktop が実行ファイルを探す先）。ツリーごと消すと本体を壊すため、直下のデータ用サブ
-#    フォルダだけを消す。どのフォルダができるかは実機で確認していないので、あるものだけを消す。
+#    setup.ps1 が実行ファイルを探す先）。ツリーごと消すと本体を壊すため、直下のデータ用サブフォルダ
+#    だけを消す。どのフォルダができるかは実機で確認していないので、あるものだけを消す。
 $ClaudeAppRoots = @(
   "$env:LOCALAPPDATA\AnthropicClaude",
   "$env:LOCALAPPDATA\Claude"
@@ -34,6 +32,8 @@ foreach ($root in $ClaudeAppRoots) {
   foreach ($sub in $ClaudeDataSubDirs) { $ClaudeAppDataPaths += (Join-Path $root $sub) }
 }
 
+# 削除対象。Name は表示名、Paths は中身ごと消すフォルダ・ファイル。
+# ※ 保存先は実機で確認していないため、存在するものだけを消す作りにしてある。
 $Targets = @(
   @{ Name = 'Claude デスクトップアプリのサインイン情報・キャッシュ';
      Paths = $ClaudeAppDataPaths },
@@ -70,7 +70,7 @@ $StandardUserDirs = @(
   'マイ ピクチャ', 'マイ ミュージック', 'Local Settings', 'My Documents', 'My Music',
   'My Pictures', 'My Videos', 'Start Menu', 'Recent',
   'NetHood', 'PrintHood', 'SendTo', 'Templates', 'Cookies', 'IntelGraphicsProfiles',
-  'MicrosoftEdgeBackups', 'source', '.vscode'
+  'MicrosoftEdgeBackups'
 )
 
 # 法人テナントの同期フォルダは 'OneDrive - <会社名>' という名前になるため、前方一致で除外する。
