@@ -92,7 +92,7 @@ apd-gt-dpt@idnet.co.jp
 研修では、Claude が作った Word・Excel・PowerPoint のファイルを LibreOffice で開いて確認する。
 
 1. スタートメニューから **LibreOffice Impress** を起動し、画面が表示されることを確認する。確認できたら閉じてよい
-2. handson フォルダの中に **PDF** があれば、ダブルクリックして内容が表示されることを確認する
+2. handson フォルダの中に PDF があれば、ダブルクリックして内容が表示されることを確認する
 3. handson フォルダの中に Word・Excel・PowerPoint のファイルがあれば、ダブルクリックして LibreOffice で開くことを確認する
 
 > 別のアプリ（Microsoft PowerPoint など）で開いてしまう場合は、ファイルを右クリック → **プログラムから開く** → **LibreOffice** の該当するアプリ（Word なら Writer、Excel なら Calc、PowerPoint なら Impress）を選んでください。
