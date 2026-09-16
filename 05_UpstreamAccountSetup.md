@@ -135,7 +135,7 @@ node -v
 python -c "import docx, openpyxl, pptx"
 ```
 
-> 最初の3つはバージョン（`git version 2.x.x` `Python 3.12.x` `v22.x.x`）が表示され、最後の1つは何も表示されずに次の入力待ちに戻れば正常である。
+> 最初の3つはバージョン（`git version 2.x.x`・`Python 3.12.x`・`v22.x.x` 以降）が表示され、最後の1つは何も表示されずに次の入力待ちに戻れば正常である。`node -v` は PC によって `v24.x.x` のこともあるが、そのままでよい。
 
 ---
 

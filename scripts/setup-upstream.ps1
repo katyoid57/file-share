@@ -11,13 +11,15 @@ $ErrorActionPreference = 'Continue'
 
 # 研修で使うバージョン。提案資料の「受講環境と事前セットアップ」に合わせている。
 $PythonVersion = '3.12'                                   # Python は 3.12 系
-$NodeMajor     = '22'                                     # Node.js は 22 系（LTS）
+$NodeMajor     = 22                                       # Node.js は 22 系（新しく入れる場合のバージョン）
 $PyLibs        = @('python-docx', 'openpyxl', 'python-pptx')  # Word・Excel・スライドの生成に使う
 $PyImportTest  = 'import docx, openpyxl, pptx'            # ライブラリ名と読み込み名が違うため別に持つ
 
 # 合否の判定条件。インストール時と確認時で基準がずれないよう1か所に置く。
 $PythonPattern = "Python $PythonVersion.*"
-$NodePattern   = "v$NodeMajor.*"
+# Node.js はメジャー番号が $NodeMajor 以上なら合格とする。24 系など 22 より新しいものが
+# 先に入っている PC では、それを消して 22 に入れ直すことはしない（研修では受講者が
+# node を直接打たないため、22 系を要求する理由が導入時の統一だけになる）。
 
 # LibreOffice の実行ファイル。64bit 版と 32bit 版で置き場所が違うため両方を候補にする。
 $SofficeCandidates = @( (Join-Path $env:ProgramFiles 'LibreOffice\program\soffice.exe') )
@@ -95,9 +97,21 @@ function Test-PythonVersion {
   return ($t -and ($t -like $PythonPattern))
 }
 
+# node -v の出力（`v22.20.0` のような文字列）からメジャー番号を数値で返す。
+# node が無い場合と、想定外の形式で読み取れない場合は $null。
+# 取得済みの文字列があれば $Text で渡す（node -v を2度呼ばないため）。
+function Get-NodeMajor {
+  param([string]$Text)
+  $t = if ($Text) { $Text } else { Get-NodeVersionText }
+  if (-not $t) { return $null }
+  $m = [regex]::Match($t, '^v(\d+)\.')
+  if (-not $m.Success) { return $null }
+  return [int]$m.Groups[1].Value
+}
+
 function Test-NodeVersion {
-  $t = Get-NodeVersionText
-  return ($t -and ($t -like $NodePattern))
+  $maj = Get-NodeMajor
+  return (($null -ne $maj) -and ($maj -ge $NodeMajor))
 }
 
 # Python ライブラリ3種を読み込めるかどうかを返す。
@@ -291,16 +305,27 @@ function Invoke-Check {
     $ng++; Write-Host "[NG] Python ライブラリ: $($PyLibs -join ' / ') のいずれかが読み込めません（手順書の B-3）" -ForegroundColor Red
   }
 
-  # Node.js（バージョンが 22 系かどうかまで見る）
-  $nv = Get-NodeVersionText
+  # Node.js（メジャー番号まで見る。$NodeMajor 系以降であれば合格）
+  $nv       = Get-NodeVersionText
+  $nodeMaj  = Get-NodeMajor -Text $nv
+  $nodeNote = $null
   if ($null -eq $nv) {
     $ng++; Write-Host '[NG] Node.js: node コマンドが見つかりません（手順書の B-4）' -ForegroundColor Red
-  } elseif ($nv -like $NodePattern) {
+  } elseif ($null -eq $nodeMaj) {
+    $ng++
+    Write-Host "[NG] Node.js: $nv（バージョンを読み取れません）" -ForegroundColor Red
+    Write-Host "     $ContactNote"
+  } elseif ($nodeMaj -eq $NodeMajor) {
     Write-Host "[OK] Node.js: $nv" -ForegroundColor Green
+  } elseif ($nodeMaj -gt $NodeMajor) {
+    # 消して入れ直すことはしない。ただし研修で検証したのは $NodeMajor 系なので、
+    # どの PC が違うバージョンで研修に臨むのかが画面に残るようにする。
+    $nodeNote = "Node.js は $nv です（研修で検証したのは $NodeMajor 系）。この PC は $nodeMaj 系のまま研修に使います。"
+    Write-Host "[OK] Node.js: $nv ← $NodeMajor 系ではありません（このまま研修に使えます）" -ForegroundColor Yellow
   } else {
     $ng++
-    Write-Host "[NG] Node.js: $nv（研修では $NodeMajor 系を使用します）" -ForegroundColor Red
-    Write-Host "     別のバージョンが先に見つかっています。$ContactNote"
+    Write-Host "[NG] Node.js: $nv（研修では $NodeMajor 系以降を使用します）" -ForegroundColor Red
+    Write-Host "     $NodeMajor 系より古いバージョンが先に見つかっています。$ContactNote"
   }
 
   # npm（Node.js に同梱されるため個別の導入手順は無い。欠けていれば Node.js の入れ直しになる）
@@ -328,6 +353,8 @@ function Invoke-Check {
   }
 
   Write-Host ''
+  # バージョンの違いが上へ流れて見落とされないよう、最後にもう一度出す。
+  if ($nodeNote) { Write-Host "※ $nodeNote" -ForegroundColor Yellow }
   if ($ng -eq 0) {
     Write-Host '=== 確認完了: すべて [OK] です ===' -ForegroundColor Green
   } else {
@@ -400,12 +427,17 @@ function Invoke-Setup {
   Write-Host ''
   Write-Host "=== Node.js $NodeMajor のインストール ===" -ForegroundColor Cyan
   Update-SessionPath
-  $nv = Get-NodeVersionText
-  if ($nv -and ($nv -like $NodePattern)) {
+  $nv      = Get-NodeVersionText
+  $nodeMaj = Get-NodeMajor -Text $nv
+  if ($null -ne $nodeMaj -and $nodeMaj -eq $NodeMajor) {
     Write-Host "→ 既にインストール済みのためスキップします。（$nv）"
+  } elseif ($null -ne $nodeMaj -and $nodeMaj -gt $NodeMajor) {
+    # Node.js の MSI は複数のバージョンを共存させられないため、22 を入れるには既存の
+    # バージョンを削除することになる。研修では node を直接打たないので、消さずに使う。
+    Write-Host "→ $nv が入っています。$NodeMajor 系ではありませんが、このまま研修に使えるのでスキップします。" -ForegroundColor Yellow
   } else {
     if ($nv) {
-      Write-Host "→ $nv が入っていますが研修では $NodeMajor 系を使用するため、$NodeMajor を追加でインストールします。" -ForegroundColor Yellow
+      Write-Host "→ $nv が入っていますが研修では $NodeMajor 系以降を使用するため、$NodeMajor 系を入れます。" -ForegroundColor Yellow
     }
     # winget は使わない。winget のバージョン一覧は新しい順に約38件で打ち切られ、
     # OpenJS.NodeJS.LTS は 24 系しか持たないため、22 系を指定する手段が無い（実機で確認）。
