@@ -288,14 +288,9 @@ npm -v
 python -c "import docx, openpyxl, pptx"
 ```
 
-```bash
-curl -s -o /dev/null -w "Claude.ai: %{http_code}\n" https://claude.ai
-```
-
 > **結果の見かた**
 > - 最初の4つは、それぞれバージョン（`git version 2.x.x`・`Python 3.12.x`・`v22.x.x` 以降・`10.x.x`）が表示されれば正常
 > - 5つめは、**何も表示されずに入力待ちの行（`$` で始まる行）が戻れば正常**
-> - 6つめは `Claude.ai: 200` と表示されれば正常（`301` などの 3 桁の数字で始まる応答でもつながっている）
 >
 > **うまくいかないときの行き先**
 > - `command not found` と表示された → そのツールの手順（B-1・B-2・B-4）を見直す
@@ -303,17 +298,13 @@ curl -s -o /dev/null -w "Claude.ai: %{http_code}\n" https://claude.ai
 > - `Python 3.12` 以外のバージョンが表示された → B-2 を見直す
 > - `v22` より古い Node.js が表示された → B-4 を見直す（`v24` など 22 より新しいものはそのままでよい）
 > - `ModuleNotFoundError` と表示された → **PowerShell を開いて** B-3 を実施する（B-3 は PowerShell で行う手順である）
-> - `Claude.ai: 000`・`407`・`403` と表示された、またはエラーになった → 社内ネットワークの設定が原因である。ネットワーク管理者に確認すること
 
 #### 画面付きアプリの起動確認
 
 コマンドで確認できない2つは、実際に起動して確かめる。
 
 1. スタートメニューから **「LibreOffice」** を起動し、スタートセンターの画面が出たら閉じる
-   - 起動せず、`VCRUNTIME140.dll が見つかりません` のようなエラーが出る場合は、**Microsoft Visual C++ 再頒布可能パッケージ**（`Microsoft.VCRedist.2015+.x64`）が必要である。社内の申請を経てから `winget install --exact --id Microsoft.VCRedist.2015+.x64` で導入する
 2. スタートメニューから **「Claude」** を起動し、**サインイン画面が表示される**ことを確認したら閉じる（サインインは受講者が行うため、ここではしない）
-
-> Claude デスクトップアプリが起動しない場合は B-6 を、LibreOffice が起動しない場合は B-5 をやり直す。
 
 #### 後片付け
 
@@ -343,13 +334,3 @@ Claude デスクトップアプリ → LibreOffice → Node.js → Python 3.12 �
 
 > **重要:** 実行後は PowerShell を閉じて開き直す。PATH の変更が反映されないまま `setup-upstream.ps1` を実行すると、消したはずのツールが見つかったように見える。
 
----
-
-## この後の手順
-
-PC の準備はここまでである。**A-2 または B-7 の点検がすべて `[OK]` になり、上の起動確認も通ってから受講者に渡すこと。** 続きは以下で行う。
-
-| 文書 | 誰が | 内容 |
-|---|---|---|
-| [05_UpstreamAccountSetup.md](05_UpstreamAccountSetup.md) | 受講者 | アカウント作成、Claude デスクトップアプリへのサインイン、配布フォルダの配置、Code タブでの読み込み、研修当日の起動 |
-| [06_UpstreamCleanup.md](06_UpstreamCleanup.md) | 運営 | 研修終了後、PC をこの手順書の完了時点の状態に戻す |
