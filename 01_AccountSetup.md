@@ -59,7 +59,7 @@ apd-gt-dpt@idnet.co.jp
 
 ---
 
-### 2. WSL起動
+### 2. WSL起動（ここから研修用 PC）
 
 1. Windows のスタートメニューまたはタスクバーから **「Visual Studio Code」** を起動する
 
