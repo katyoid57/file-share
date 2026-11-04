@@ -75,7 +75,12 @@ $StandardUserDirs = @(
 
 # 法人テナントの同期フォルダは 'OneDrive - <会社名>' という名前になるため、前方一致で除外する。
 # ここを取り違えて削除すると会社の OneDrive ごと消える。
-$StandardUserDirPrefixes = @('OneDrive')
+# NTUSER.DAT・ntuser.dat.LOG1・ntuser.ini などはユーザーのレジストリ本体とその記録なので除外する。
+# 消すと次回サインイン時にプロファイルが壊れるおそれがある（-like は大文字小文字を区別しない）。
+$StandardUserDirPrefixes = @('OneDrive', 'ntuser')
+
+# デスクトップに運営が置いて、次の受講者にも残すファイル。
+$KeepDesktopItems = @('セットアップ手順.url')
 
 # 研修で作られたと思われるフォルダ・ファイルを列挙する（削除はしない）。
 function Get-HandoutCandidates {
@@ -92,6 +97,8 @@ function Get-HandoutCandidates {
         ($StandardUserDirs -notcontains $name) -and
         (-not ($StandardUserDirPrefixes | Where-Object { $name -like "$_*" }))
       }
+    } else {
+      $found = $found | Where-Object { $KeepDesktopItems -notcontains $_.Name }
     }
     $items += @($found)
   }
