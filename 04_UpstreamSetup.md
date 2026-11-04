@@ -251,6 +251,8 @@ if ((Test-Path -LiteralPath "$env:ProgramFiles\LibreOffice\program\soffice.exe")
 $claudePaths = @("$env:LOCALAPPDATA\AnthropicClaude\claude.exe", "$env:LOCALAPPDATA\Programs\Claude\Claude.exe", "$env:ProgramFiles\Claude\Claude.exe")
 $claudeReg = Get-ChildItem 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall', 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall', 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall' -ErrorAction SilentlyContinue | ForEach-Object { Get-ItemProperty $_.PSPath -ErrorAction SilentlyContinue } | Where-Object { $_.DisplayName -like 'Claude*' }
 $claudeExe = $claudePaths + ($claudeReg | ForEach-Object { ($_.DisplayIcon -replace ',.*$', '').Trim('"'); if ($_.InstallLocation) { Join-Path $_.InstallLocation 'claude.exe' } }) | Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -First 1
+# 見つからなければ Microsoft Store 形式（C:\Program Files\WindowsApps の下）で入っていないかを見る
+if (-not $claudeExe) { $claudeExe = Get-AppxPackage -Name Claude -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty InstallLocation }
 if ($claudeExe) { "OK: Claude デスクトップアプリ $claudeExe" } else { "NG: Claude デスクトップアプリなし" }
 ```
 

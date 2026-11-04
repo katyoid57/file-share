@@ -55,6 +55,9 @@ function Get-ClaudeDesktop {
     (Join-Path $env:ProgramFiles  'Claude\Claude.exe')
   )
   foreach ($c in $cands) { if (Test-Path -LiteralPath $c) { return $c } }
+  # Microsoft Store 形式（MSIX）で入った場合は、C:\Program Files\WindowsApps の下に入る
+  $pkg = Get-AppxPackage -Name 'Claude' -ErrorAction SilentlyContinue | Select-Object -First 1
+  if ($pkg -and $pkg.InstallLocation) { return $pkg.InstallLocation }
   return $null
 }
 
@@ -80,7 +83,7 @@ function Get-ArpEntries {
 # 削除対象。インストールと逆の順で消す。
 $Apps = @(
   @{ Name = 'Claude デスクトップアプリ'; Ids = @('Anthropic.Claude', 'Anthropic.ClaudeDesktop');
-     Arp = 'Claude';       Probe = { [bool](Get-ClaudeDesktop) } },
+     Arp = 'Claude';       Appx = 'Claude'; Probe = { [bool](Get-ClaudeDesktop) } },
   @{ Name = 'LibreOffice';               Ids = @('TheDocumentFoundation.LibreOffice');
      Arp = 'LibreOffice';  Probe = { [bool](Get-SofficeExe) } },
   @{ Name = 'Node.js';                   Ids = @('OpenJS.NodeJS', 'OpenJS.NodeJS.LTS');
@@ -185,6 +188,12 @@ function Invoke-Uninstall {
       Write-Host '  winget では削除できませんでした。「プログラムと機能」の登録から削除します。'
       Uninstall-ByArp -NameLike $app.Arp
       Update-SessionPath
+    }
+    # Microsoft Store 形式（MSIX）で入ったものは「プログラムと機能」に載らないため、パッケージとして削除する。
+    # データ（%LOCALAPPDATA%\Packages の下）はパッケージと一緒に Windows が削除する。
+    if ($app.Appx -and [bool](& $app.Probe)) {
+      Write-Host '  Microsoft Store 形式のパッケージとして削除します。'
+      Get-AppxPackage -Name $app.Appx -ErrorAction SilentlyContinue | Remove-AppxPackage -ErrorAction SilentlyContinue
     }
 
     if ([bool](& $app.Probe)) {

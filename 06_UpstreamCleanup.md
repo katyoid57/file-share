@@ -87,7 +87,7 @@ PowerShell で上から順に実行します。
 ```powershell
 # ファイルを掴んでいるアプリを終了する（未保存の内容ごと閉じる）
 # OneDrive は同期でファイルを掴むため一緒に終了する（次回サインイン時に自動起動する）
-Get-Process claude, soffice, soffice.bin, bash, mintty, OneDrive -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+Get-Process claude*, soffice, soffice.bin, bash, mintty, OneDrive -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 2
 ```
 
@@ -99,6 +99,8 @@ Start-Sleep -Seconds 2
 #    ツリーごとではなくデータ用のサブフォルダだけを消す。
 Remove-Item "$env:APPDATA\Claude" -Recurse -Force -ErrorAction SilentlyContinue
 foreach ($root in @("$env:LOCALAPPDATA\AnthropicClaude", "$env:LOCALAPPDATA\Claude")) { foreach ($sub in @('Cache','Code Cache','GPUCache','DawnCache','Local Storage','Session Storage','IndexedDB','Network','Cookies','Partitions','Crashpad','logs','Service Worker','blob_storage','databases','sentry')) { Remove-Item -LiteralPath (Join-Path $root $sub) -Recurse -Force -ErrorAction SilentlyContinue } }
+# Microsoft Store 形式で入った場合は、データが %LOCALAPPDATA%\Packages\Claude_<英数字> の下にある（アプリ本体は別の場所なので消してよい）
+foreach ($pkg in @(Get-AppxPackage -Name Claude -ErrorAction SilentlyContinue)) { $cache = "$env:LOCALAPPDATA\Packages\$($pkg.PackageFamilyName)\LocalCache"; Remove-Item -LiteralPath "$cache\Roaming\Claude", "$cache\Local\Claude" -Recurse -Force -ErrorAction SilentlyContinue }
 ```
 
 ##### B-3. Claude Code の設定・会話履歴削除
@@ -175,6 +177,7 @@ Remove-Item -LiteralPath (Join-Path $env:USERPROFILE "<名前>") -Recurse -Force
 ```powershell
 # 確認（手動。スクリプトを使わず点検する）
 if (Test-Path -LiteralPath "$env:APPDATA\Claude") { "NG: Claude アプリのデータ残存 ($env:APPDATA\Claude)" } else { "OK: Claude アプリのデータなし" }
+foreach ($pkg in @(Get-AppxPackage -Name Claude -ErrorAction SilentlyContinue)) { foreach ($p in @("Roaming\Claude", "Local\Claude")) { $d = "$env:LOCALAPPDATA\Packages\$($pkg.PackageFamilyName)\LocalCache\$p"; if (Test-Path -LiteralPath $d) { "NG: Claude アプリのデータ残存 ($d)" } else { "OK: Claude アプリのデータなし ($d)" } } }
 foreach ($p in @("$env:USERPROFILE\.claude", "$env:USERPROFILE\.claude.json", "$env:USERPROFILE\.claude.json.backup")) { if (Test-Path -LiteralPath $p) { "NG: Claude Code の履歴残存 ($p)" } else { "OK: Claude Code の履歴なし ($p)" } }
 foreach ($p in @("$env:USERPROFILE\.bash_history", "$env:USERPROFILE\.gitconfig", "$env:USERPROFILE\.git-credentials")) { if (Test-Path -LiteralPath $p) { "NG: Git Bash の痕跡残存 ($p)" } else { "OK: Git Bash の痕跡なし ($p)" } }
 if (Test-Path -LiteralPath "$env:APPDATA\LibreOffice") { "NG: LibreOffice のプロファイル残存" } else { "OK: LibreOffice のプロファイルなし" }
@@ -196,7 +199,7 @@ Get-ChildItem ([Environment]::GetFolderPath('Desktop')), $env:USERPROFILE, ([Env
 # ツールが残っているか（すべて OK と表示されること）
 foreach ($c in @('git','python','node')) { if (Get-Command $c -CommandType Application -ErrorAction SilentlyContinue) { "OK: $c あり" } else { "NG: $c が見つかりません" } }
 if (@("$env:ProgramFiles\LibreOffice\program\soffice.exe", "${env:ProgramFiles(x86)}\LibreOffice\program\soffice.exe") | Where-Object { $_ -and (Test-Path -LiteralPath $_) }) { "OK: LibreOffice あり" } else { "NG: LibreOffice が見つかりません" }
-if (@("$env:LOCALAPPDATA\AnthropicClaude\claude.exe", "$env:LOCALAPPDATA\Programs\Claude\Claude.exe", "$env:ProgramFiles\Claude\Claude.exe") | Where-Object { Test-Path -LiteralPath $_ }) { "OK: Claude デスクトップアプリあり" } else { "NG: Claude デスクトップアプリの実行ファイルが見つかりません" }
+if ((@("$env:LOCALAPPDATA\AnthropicClaude\claude.exe", "$env:LOCALAPPDATA\Programs\Claude\Claude.exe", "$env:ProgramFiles\Claude\Claude.exe") | Where-Object { Test-Path -LiteralPath $_ }) -or (Get-AppxPackage -Name Claude -ErrorAction SilentlyContinue)) { "OK: Claude デスクトップアプリあり" } else { "NG: Claude デスクトップアプリが見つかりません" }
 ```
 
 ---
@@ -259,7 +262,7 @@ Clear-RecycleBin -Force -ErrorAction SilentlyContinue
 2. デスクトップ・ユーザーフォルダ直下・ドキュメント・ピクチャに、配布フォルダや受講者が作ったファイルが残っていないことを確認する
 3. スタートメニューから Git Bash を起動し、`git --version`・`python --version`・`node -v` が表示されることを確認する（ツール本体は残す）
 
-> **1 でアカウントの候補が表示される場合**は、Claude デスクトップアプリのデータが消えていません。手順2 の B-2・B-3（`%APPDATA%\Claude` とユーザーフォルダ直下の `.claude` 系）をやり直してください。共通分の OneAuth・TokenBroker は Microsoft のサインイン基盤なので、ここには関係しません。
+> **1 でアカウントの候補が表示される場合**は、Claude デスクトップアプリのデータが消えていません。手順2 の B-2・B-3（`%APPDATA%\Claude`、Microsoft Store 形式で入った場合は `%LOCALAPPDATA%\Packages\Claude_<英数字>` の下、ユーザーフォルダ直下の `.claude` 系）をやり直してください。共通分の OneAuth・TokenBroker は Microsoft のサインイン基盤なので、ここには関係しません。
 
 > **確認のあとに点検し直すと `[NG]` が出ます:** 1 で Claude デスクトップアプリを起動するとデータのフォルダが作り直され、3 で Git Bash を閉じると `.bash_history` が作り直されます。確認のあとに `cleanup-upstream.ps1 -Check` を実行して `[NG]` が出た場合は、**この確認操作による作り直し**か、消し漏れかを見分けてください。厳密に空の状態で返すなら、最終確認のあとに手順2 をもう一度実行します。
 

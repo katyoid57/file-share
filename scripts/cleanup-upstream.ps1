@@ -31,6 +31,15 @@ $ClaudeAppDataPaths = @("$env:APPDATA\Claude")
 foreach ($root in $ClaudeAppRoots) {
   foreach ($sub in $ClaudeDataSubDirs) { $ClaudeAppDataPaths += (Join-Path $root $sub) }
 }
+# Microsoft Store 形式（MSIX）で入った場合、アプリが %APPDATA%・%LOCALAPPDATA% に書くデータは、Windows が
+# %LOCALAPPDATA%\Packages\<パッケージファミリー名>\LocalCache の下へ振り替える。
+# アプリ本体は C:\Program Files\WindowsApps にあるので、この下の Claude フォルダはまるごと消してよい。
+# パッケージファミリー名（Claude_ に配布元から決まる文字列が付く）は決め打ちせず、インストール情報から引く。
+foreach ($pkg in @(Get-AppxPackage -Name 'Claude' -ErrorAction SilentlyContinue)) {
+  $cache = Join-Path $env:LOCALAPPDATA "Packages\$($pkg.PackageFamilyName)\LocalCache"
+  $ClaudeAppDataPaths += (Join-Path $cache 'Roaming\Claude')
+  $ClaudeAppDataPaths += (Join-Path $cache 'Local\Claude')
+}
 
 # 削除対象。Name は表示名、Paths は中身ごと消すフォルダ・ファイル。
 # ※ 保存先は実機で確認していないため、存在するものだけを消す作りにしてある。
@@ -169,10 +178,14 @@ function Invoke-Check {
   }
   $claudeExe = @("$env:LOCALAPPDATA\AnthropicClaude\claude.exe", "$env:LOCALAPPDATA\Programs\Claude\Claude.exe", "$env:ProgramFiles\Claude\Claude.exe") |
     Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+  if (-not $claudeExe) {
+    # Microsoft Store 形式（MSIX）で入った場合は、上のどこにも無い。パッケージのインストール先を出す。
+    $claudeExe = Get-AppxPackage -Name 'Claude' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty InstallLocation
+  }
   if ($claudeExe) {
     Write-Host "[OK] Claude デスクトップアプリは残っています（$claudeExe）" -ForegroundColor Green
   } else {
-    $ng++; Write-Host '[NG] Claude デスクトップアプリの実行ファイルが見つかりません（本体は残す対象です）' -ForegroundColor Red
+    $ng++; Write-Host '[NG] Claude デスクトップアプリが見つかりません（本体は残す対象です）' -ForegroundColor Red
   }
 
   # 配布フォルダは名前が分からないため、候補を一覧表示する（合否判定はしない）

@@ -133,6 +133,7 @@ function Get-SofficeExe {
 # Claude デスクトップアプリの実行ファイルを探し、そのパスを返す（見つからなければ $null）。
 # ※ インストール先を決め打ちできないため、既定の場所を見たあと、レジストリのアンインストール情報
 #    （DisplayIcon・InstallLocation）から実行ファイルの場所を引く。どちらもファイルの存在まで確認する。
+#    どちらにも無ければ、Microsoft Store 形式のパッケージとして入っていないかを見る。
 function Get-ClaudeDesktop {
   $candidates = @(
     (Join-Path $env:LOCALAPPDATA 'AnthropicClaude\claude.exe'),
@@ -164,6 +165,11 @@ function Get-ClaudeDesktop {
       if (Test-Path -LiteralPath $exe) { return $exe }
     }
   }
+
+  # Microsoft Store 形式（MSIX）で入った場合は、C:\Program Files\WindowsApps の下に入り、
+  # 上のどちらにも出てこない。パッケージのインストール先を返す。
+  $pkg = Get-AppxPackage -Name 'Claude' -ErrorAction SilentlyContinue | Select-Object -First 1
+  if ($pkg -and $pkg.InstallLocation) { return $pkg.InstallLocation }
   return $null
 }
 
