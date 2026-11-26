@@ -19,7 +19,7 @@
 
 ---
 
-## セットアップ
+## セットアップ（初回）
 
 ### 1. ツールのインストール
 
@@ -311,6 +311,25 @@ python -c "import docx, openpyxl, pptx"
 #### 後片付け
 
 A ルートで進めた場合は、ここで **A-3** を実施して `setup-upstream.ps1` を削除する。
+
+---
+
+## セットアップ（2回目以降）
+
+### 1. 管理者権限アカウントでのログイン
+
+### 2. セットアップ完了確認
+実行場所：powershell
+
+```powershell
+# ダウンロード（TEMP に保存。作業フォルダの権限に依存しない）
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/setup-upstream.ps1 -OutFile "$env:TEMP\setup-upstream.ps1"
+# 確認（-Check は確認のみ。インストールは行わない。）
+powershell -ExecutionPolicy Bypass -File "$env:TEMP\setup-upstream.ps1" -Check
+```
+
+> すべて[OK]であれば問題なし、セットアップ完了。
+> [NG]が出た場合は、NGが出たものを手動でインストールする。
 
 ---
 
