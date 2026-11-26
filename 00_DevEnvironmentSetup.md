@@ -9,7 +9,7 @@
 
 ---
 
-## セットアップ
+## セットアップ（初回）
 
 ### 1. 管理者権限アカウントでのログイン
 
@@ -280,3 +280,24 @@ mvn -version
 
 4. 起動確認  
    左下に **「WSL: Ubuntu-22.04」** と表示されていれば接続成功
+
+---
+
+## セットアップ（2回目以降）
+
+### 1. 管理者権限アカウントでのログイン
+
+### 2. セットアップ完了確認
+実行場所：WSL(Ubuntu)
+
+```bash
+# ダウンロード
+curl -fsSL https://raw.githubusercontent.com/katyoid57/file-share/main/scripts/setup.sh -o setup.sh
+# 確認（-Check は確認のみ。インストールは行わない。）
+bash setup.sh --check
+```
+
+> すべて[OK]であれば問題なし、セットアップ完了。
+> [NG]が出た場合は、NGが出たものを手動でインストールする。
+
+---
